@@ -41,7 +41,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -54,6 +53,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.ui.unit.dp
 import com.nightpos.app.BuildConfig
 import com.nightpos.app.R
@@ -61,8 +61,10 @@ import com.nightpos.app.ui.theme.ErrorRed
 import com.nightpos.app.ui.theme.NeonPurple
 import com.nightpos.app.ui.theme.TextSecondary
 import com.nightpos.app.util.TwaDiagnostics
-import kotlinx.coroutines.CoroutineScope
+import com.nightpos.app.util.TwaLaunchLog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -165,11 +167,12 @@ fun SettingsScreen(
 
             item { SectionHeader(stringResource(R.string.settings_section_about)) }
 
+            item { AboutRow() }
+
             item {
-                AboutRow(
+                DiagnosticsRow(
                     serverUrl = uiState.serverUrl,
                     snackbarHostState = snackbarHostState,
-                    scope = scope,
                 )
             }
         }
@@ -312,36 +315,11 @@ private fun ClearDataRow(isClearing: Boolean, onClear: () -> Unit) {
     }
 }
 
-/** Tapping the version row this many times within [TAP_WINDOW_MS] reveals the diagnostics dialog. */
-private const val DIAGNOSTICS_TAP_COUNT = 5
-private const val TAP_WINDOW_MS = 2000L
-
 @Composable
-private fun AboutRow(
-    serverUrl: String,
-    snackbarHostState: SnackbarHostState,
-    scope: CoroutineScope,
-) {
-    val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
-    val copiedMessage = stringResource(R.string.diagnostics_copied)
-    var tapCount by remember { mutableStateOf(0) }
-    var lastTapAtMs by remember { mutableLongStateOf(0L) }
-    var diagnosticsText by remember { mutableStateOf<String?>(null) }
-
+private fun AboutRow() {
     SettingsCard {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    val now = System.currentTimeMillis()
-                    tapCount = if (now - lastTapAtMs <= TAP_WINDOW_MS) tapCount + 1 else 1
-                    lastTapAtMs = now
-                    if (tapCount >= DIAGNOSTICS_TAP_COUNT) {
-                        tapCount = 0
-                        diagnosticsText = TwaDiagnostics.collect(context, serverUrl)
-                    }
-                },
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
@@ -362,6 +340,59 @@ private fun AboutRow(
             color = TextSecondary,
         )
     }
+}
+
+@Composable
+private fun DiagnosticsRow(
+    serverUrl: String,
+    snackbarHostState: SnackbarHostState,
+) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    val copiedMessage = stringResource(R.string.diagnostics_copied)
+    val scope = rememberCoroutineScope()
+    var diagnosticsText by remember { mutableStateOf<String?>(null) }
+    var isCollecting by remember { mutableStateOf(false) }
+
+    SettingsCard {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = !isCollecting) {
+                    isCollecting = true
+                    scope.launch {
+                        val combined = withContext(Dispatchers.IO) {
+                            val sysInfo = TwaDiagnostics.collect(context, serverUrl)
+                            val launchLog = TwaLaunchLog.read(context)
+                            "=== System Info ===\n$sysInfo\n\n=== TWA Launch Log ===\n$launchLog"
+                        }
+                        diagnosticsText = combined
+                        isCollecting = false
+                    }
+                },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.diagnostics_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (isCollecting) TextSecondary else MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(R.string.diagnostics_menu_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Icon(
+                imageVector = Icons.Filled.BugReport,
+                contentDescription = null,
+                tint = if (isCollecting) TextSecondary else NeonPurple,
+            )
+        }
+    }
 
     diagnosticsText?.let { text ->
         AlertDialog(
@@ -381,6 +412,7 @@ private fun AboutRow(
                 TextButton(onClick = {
                     clipboardManager.setText(AnnotatedString(text))
                     scope.launch { snackbarHostState.showSnackbar(message = copiedMessage) }
+                    diagnosticsText = null
                 }) {
                     Text(stringResource(R.string.diagnostics_copy))
                 }

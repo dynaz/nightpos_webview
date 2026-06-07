@@ -70,8 +70,9 @@
 
     <string name="settings_version">เวอร์ชันแอป</string>
 
-    <!-- Diagnostics (hidden: tap app version 5 times) -->
+    <!-- Diagnostics panel (Settings → About) -->
     <string name="diagnostics_title">ข้อมูลวินิจฉัย</string>
+    <string name="diagnostics_menu_desc">ดูข้อมูลระบบและบันทึกการเปิด Chrome</string>
     <string name="diagnostics_copy">คัดลอก</string>
     <string name="diagnostics_copied">คัดลอกข้อมูลวินิจฉัยแล้ว</string>
 

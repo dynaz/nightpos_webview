@@ -3,7 +3,10 @@ package com.nightpos.app.twa
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
+import androidx.browser.customtabs.CustomTabsClient
 import com.google.androidbrowserhelper.trusted.LauncherActivity
+import com.nightpos.app.util.TwaLaunchLog
 
 /**
  * Launches the Odoo backend in a Trusted Web Activity, rendered by the device's
@@ -18,9 +21,26 @@ import com.google.androidbrowserhelper.trusted.LauncherActivity
  */
 class TwaLauncherActivity : LauncherActivity() {
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        logLaunch()
+        super.onCreate(savedInstanceState)
+    }
+
     override fun getLaunchingUrl(): Uri {
         val url = intent?.getStringExtra(EXTRA_URL)
         return if (!url.isNullOrBlank()) Uri.parse(url) else super.getLaunchingUrl()
+    }
+
+    private fun logLaunch() {
+        val url = intent?.getStringExtra(EXTRA_URL) ?: "(default)"
+        val provider = CustomTabsClient.getPackageName(this, null)
+        val entry = if (provider == null) {
+            "WARN url=$url provider=NONE — no Custom Tabs provider; Chrome may not be installed or is disabled"
+        } else {
+            val version = runCatching { packageManager.getPackageInfo(provider, 0).versionName }.getOrNull()
+            "INFO url=$url provider=$provider${version?.let { "@$it" } ?: ""}"
+        }
+        TwaLaunchLog.append(this, entry)
     }
 
     companion object {
