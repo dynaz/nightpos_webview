@@ -3,24 +3,52 @@ package com.nightpos.app.twa
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
+import androidx.browser.customtabs.CustomTabsClient
 import com.google.androidbrowserhelper.trusted.LauncherActivity
+import com.nightpos.app.util.TwaLaunchLog
 
 /**
- * Launches the Odoo backend in a Trusted Web Activity, rendered by the device's
- * Chrome browser engine instead of the (often outdated) Android System WebView
- * component — some devices ship a WebView build too old for Odoo 19's UI while
- * still keeping Chrome itself up to date.
+ * Launches the Odoo backend in a Trusted Web Activity rendered by Chrome.
+ *
+ * Falls back to a plain browser Intent when no Custom Tabs provider is available
+ * (e.g. Chrome not installed / disabled) so buttons always do something useful.
  *
  * [LauncherActivity] normally reads its URL from the `DEFAULT_URL` manifest
- * meta-data, but the Dashboard needs to point this same launcher at three
- * different destinations (POS / Reports / Customers), so the URL is instead
- * passed via [EXTRA_URL] and falls back to the manifest default only if absent.
+ * meta-data, but the Dashboard passes the URL via [EXTRA_URL] instead so it can
+ * point to different destinations (POS / Reports / etc.) without separate activities.
  */
 class TwaLauncherActivity : LauncherActivity() {
 
-    override fun getLaunchingUrl(): Uri {
-        val url = intent?.getStringExtra(EXTRA_URL)
-        return if (!url.isNullOrBlank()) Uri.parse(url) else super.getLaunchingUrl()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        val url = resolveUrl()
+        val provider = CustomTabsClient.getPackageName(this, null)
+        logLaunch(url, provider)
+
+        if (provider == null) {
+            // No Custom Tabs / TWA provider — open in whatever browser the device has.
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            finish()
+            return
+        }
+
+        super.onCreate(savedInstanceState)
+    }
+
+    override fun getLaunchingUrl(): Uri = Uri.parse(resolveUrl())
+
+    private fun resolveUrl(): String =
+        intent?.getStringExtra(EXTRA_URL)?.takeIf { it.isNotBlank() }
+            ?: super.getLaunchingUrl().toString()
+
+    private fun logLaunch(url: String, provider: String?) {
+        val entry = if (provider == null) {
+            "WARN url=$url provider=NONE — no Custom Tabs provider; falling back to system browser"
+        } else {
+            val version = runCatching { packageManager.getPackageInfo(provider, 0).versionName }.getOrNull()
+            "INFO url=$url provider=$provider${version?.let { "@$it" } ?: ""}"
+        }
+        TwaLaunchLog.append(this, entry)
     }
 
     companion object {
