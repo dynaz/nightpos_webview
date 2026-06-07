@@ -13,7 +13,7 @@ object Constants {
     /** Default Odoo POS host. Can be overridden at runtime via Settings (stored in DataStore). */
     const val DEFAULT_BASE_URL = "https://soho.nightpos.com"
 
-    const val POS_PATH = "/npos/point-of-sale"
+    const val POS_PATH = "/pos/ui"
     const val BACKEND_PATH = "/web"
 
     fun openPosUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$POS_PATH"
