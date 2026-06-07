@@ -87,7 +87,6 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.material)
-    implementation(libs.androidx.browser)
     implementation(libs.androidbrowserhelper)
 
     debugImplementation(libs.androidx.ui.tooling)
