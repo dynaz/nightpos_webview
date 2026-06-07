@@ -100,6 +100,6 @@
     <!-- Trusted Web Activity fallback URL (manifest meta-data requires a static resource;
          the real launching URL is normally supplied at runtime via TwaLauncherActivity.EXTRA_URL,
          built from Constants + the user's configured server URL). -->
-    <string name="twa_default_url" translatable="false">https://soho.nightpos.com/pos/ui</string>
+    <string name="twa_default_url" translatable="false">https://soho.nightpos.com/npos</string>
     <string name="content_desc_menu_icon">ไอคอนเมนู</string>
 </resources>
