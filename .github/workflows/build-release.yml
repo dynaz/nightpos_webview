@@ -31,10 +31,23 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Compute APK name
+        id: apk
+        run: |
+          VERSION=$(grep 'versionName\s*=' app/build.gradle.kts \
+            | grep -v 'Suffix' | grep -o '"[^"]*"' | tr -d '"' | head -1)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "name=nightpos-${VERSION}-debug-${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Rename APK
+        run: |
+          mv app/build/outputs/apk/debug/app-debug.apk \
+             "app/build/outputs/apk/debug/${{ steps.apk.outputs.name }}.apk"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nightpos-debug-apk
+          name: ${{ steps.apk.outputs.name }}
           path: app/build/outputs/apk/debug/*.apk
 
       - name: Create GitHub Release
