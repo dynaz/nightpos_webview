@@ -517,6 +517,7 @@ private fun FullscreenVideoOverlay(view: View) {
 }
 
 /** Hosts `window.open()` / `target="_blank"` popups (multi-window support). */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PopupWindowDialog(webView: WebView, onDismiss: () -> Unit) {
     androidx.compose.ui.window.Dialog(
