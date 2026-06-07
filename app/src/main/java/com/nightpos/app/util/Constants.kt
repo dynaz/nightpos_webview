@@ -17,8 +17,8 @@ object Constants {
     const val BACKEND_PATH = "/web"
     const val NPOS_HOME_PATH = "/npos"
     const val PRODUCTS_PATH = "/npos/action-770"
-    const val DISCOUNT_LOYALTY_PATH = "/npos/discount-loyalty"
-    const val GIFT_CARDS_PATH = "/npos/gift-cards-ewallet"
+    const val DISCOUNT_LOYALTY_PATH = "/npos/action-918"
+    const val GIFT_CARDS_PATH = "/npos/action-919"
 
     fun nposHomeUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$NPOS_HOME_PATH"
     fun openPosUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$POS_PATH"
