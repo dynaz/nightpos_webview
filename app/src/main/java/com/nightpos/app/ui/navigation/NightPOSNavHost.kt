@@ -80,6 +80,9 @@ fun NightPOSNavHost(
                         DashboardAction.OpenPos -> launchTwa(Constants.openPosUrl(baseUrl))
                         DashboardAction.OpenReports -> launchTwa(Constants.reportsUrl(baseUrl))
                         DashboardAction.OpenCustomers -> launchTwa(Constants.customersUrl(baseUrl))
+                        DashboardAction.OpenProducts -> launchTwa(Constants.productsUrl(baseUrl))
+                        DashboardAction.OpenDiscountLoyalty -> launchTwa(Constants.discountLoyaltyUrl(baseUrl))
+                        DashboardAction.OpenGiftCards -> launchTwa(Constants.giftCardsUrl(baseUrl))
                         DashboardAction.OpenSettings -> navController.navigate(NightPOSDestination.Settings.route)
                         DashboardAction.Logout -> Unit // handled internally by DashboardScreen's dialog
                     }

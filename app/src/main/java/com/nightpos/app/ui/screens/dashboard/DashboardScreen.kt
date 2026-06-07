@@ -17,6 +17,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
@@ -41,12 +44,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nightpos.app.R
 import com.nightpos.app.ui.components.MenuCard
+import com.nightpos.app.ui.theme.AmberAccent
+import com.nightpos.app.ui.theme.ErrorRed
+import com.nightpos.app.ui.theme.LimeAccent
+import com.nightpos.app.ui.theme.NeonCyan
 import com.nightpos.app.ui.theme.NeonPink
 import com.nightpos.app.ui.theme.NeonPurple
-import com.nightpos.app.ui.theme.AmberAccent
-import com.nightpos.app.ui.theme.SuccessGreen
-import com.nightpos.app.ui.theme.ErrorRed
+import com.nightpos.app.ui.theme.NeonVioletLight
 import com.nightpos.app.ui.theme.NightBlack
+import com.nightpos.app.ui.theme.SuccessGreen
 
 private data class DashboardMenuItem(
     val title: String,
@@ -61,6 +67,9 @@ sealed interface DashboardAction {
     data object OpenPos : DashboardAction
     data object OpenReports : DashboardAction
     data object OpenCustomers : DashboardAction
+    data object OpenProducts : DashboardAction
+    data object OpenDiscountLoyalty : DashboardAction
+    data object OpenGiftCards : DashboardAction
     data object OpenSettings : DashboardAction
     data object Logout : DashboardAction
 }
@@ -114,6 +123,27 @@ fun DashboardScreen(
                     icon = Icons.Filled.People,
                     accent = SuccessGreen,
                     action = DashboardAction.OpenCustomers,
+                ),
+                DashboardMenuItem(
+                    title = stringResource(R.string.menu_products),
+                    description = stringResource(R.string.menu_products_desc),
+                    icon = Icons.Filled.Category,
+                    accent = NeonCyan,
+                    action = DashboardAction.OpenProducts,
+                ),
+                DashboardMenuItem(
+                    title = stringResource(R.string.menu_discount_loyalty),
+                    description = stringResource(R.string.menu_discount_loyalty_desc),
+                    icon = Icons.Filled.LocalOffer,
+                    accent = NeonVioletLight,
+                    action = DashboardAction.OpenDiscountLoyalty,
+                ),
+                DashboardMenuItem(
+                    title = stringResource(R.string.menu_gift_cards),
+                    description = stringResource(R.string.menu_gift_cards_desc),
+                    icon = Icons.Filled.CardGiftcard,
+                    accent = LimeAccent,
+                    action = DashboardAction.OpenGiftCards,
                 ),
                 DashboardMenuItem(
                     title = stringResource(R.string.menu_settings),
