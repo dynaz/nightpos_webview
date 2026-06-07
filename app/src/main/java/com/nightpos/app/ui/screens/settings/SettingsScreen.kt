@@ -1,5 +1,7 @@
 package com.nightpos.app.ui.screens.settings
 
+import android.content.Intent
+import android.net.Uri
 import android.webkit.WebView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +56,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.InstallMobile
 import androidx.compose.ui.unit.dp
 import com.nightpos.app.BuildConfig
 import com.nightpos.app.R
@@ -153,6 +156,10 @@ fun SettingsScreen(
                     onCheckedChange = viewModel::setKeepScreenOnEnabled,
                 )
             }
+
+            item { SectionHeader(stringResource(R.string.settings_section_pwa)) }
+
+            item { PwaInstallRow(serverUrl = uiState.serverUrl) }
 
             item { SectionHeader(stringResource(R.string.settings_section_general)) }
 
@@ -338,6 +345,64 @@ private fun AboutRow() {
             text = "© NightPOS Soho — Odoo POS wrapper for soho.nightpos.com",
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary,
+        )
+    }
+}
+
+@Composable
+private fun PwaInstallRow(serverUrl: String) {
+    val context = LocalContext.current
+    var showDialog by remember { mutableStateOf(false) }
+
+    SettingsCard {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showDialog = true },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.pwa_install_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(R.string.pwa_install_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Icon(
+                imageVector = Icons.Filled.InstallMobile,
+                contentDescription = null,
+                tint = NeonPurple,
+            )
+        }
+    }
+
+    if (showDialog) {
+        val baseUrl = serverUrl.ifBlank { "https://soho.nightpos.com" }.trimEnd('/')
+        val pwaUrl = "$baseUrl/npos"
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(stringResource(R.string.pwa_install_dialog_title)) },
+            text = { Text(stringResource(R.string.pwa_install_dialog_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(pwaUrl)))
+                    showDialog = false
+                }) {
+                    Text(stringResource(R.string.pwa_install_confirm), color = NeonPurple)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text(stringResource(R.string.action_close))
+                }
+            },
         )
     }
 }

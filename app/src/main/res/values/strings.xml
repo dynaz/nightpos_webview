@@ -52,10 +52,11 @@
     <string name="offline_retry">ลองอีกครั้ง</string>
     <string name="offline_auto_reconnect">กำลังตรวจสอบการเชื่อมต่อโดยอัตโนมัติ…</string>
 
-    <!-- Settings -->
+    <!-- Settings sections -->
     <string name="settings_title">ตั้งค่า</string>
     <string name="settings_section_general">ทั่วไป</string>
     <string name="settings_section_pos">หน้าจอขาย</string>
+    <string name="settings_section_pwa">Progressive Web App (PWA)</string>
     <string name="settings_section_about">เกี่ยวกับ</string>
 
     <string name="settings_server_url">ที่อยู่เซิร์ฟเวอร์ POS</string>
@@ -75,6 +76,14 @@
     <string name="settings_clear_data_success">ล้างข้อมูลเรียบร้อยแล้ว</string>
 
     <string name="settings_version">เวอร์ชันแอป</string>
+
+    <!-- PWA install -->
+    <string name="pwa_install_title">ติดตั้ง NightPOS เป็น PWA</string>
+    <string name="pwa_install_desc">เปิดในเบราว์เซอร์แล้วติดตั้งลงหน้าจอหลัก — ใช้งานได้แบบ full-screen โดยไม่ต้องมี Chrome</string>
+    <string name="pwa_install_button">เปิดในเบราว์เซอร์</string>
+    <string name="pwa_install_dialog_title">วิธีติดตั้ง PWA</string>
+    <string name="pwa_install_dialog_message">1. กด \"เปิดในเบราว์เซอร์\" ด้านล่าง\n2. เบราว์เซอร์จะเปิด NightPOS\n3. กดเมนู ⋮ (มุมขวาบน)\n4. เลือก \"เพิ่มในหน้าจอหลัก\" หรือ \"ติดตั้งแอป\"\n5. เปิดแอป PWA จากหน้าจอหลักได้เลย — ไม่มี address bar</string>
+    <string name="pwa_install_confirm">เปิดในเบราว์เซอร์</string>
 
     <!-- Diagnostics panel (Settings → About) -->
     <string name="diagnostics_title">ข้อมูลวินิจฉัย</string>
