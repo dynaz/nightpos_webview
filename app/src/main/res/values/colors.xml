@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Night-club / restaurant POS palette: deep charcoal background with neon purple/violet accents,
+         matching the NightPOS app icon. -->
+    <color name="night_black">#0B0B12</color>
+    <color name="night_surface">#16141F</color>
+    <color name="night_surface_variant">#221F30</color>
+    <color name="neon_purple">#A35CFF</color>
+    <color name="neon_purple_dark">#7C3AED</color>
+    <color name="neon_violet_light">#D6BBFF</color>
+    <color name="neon_pink">#FF4FD8</color>
+    <color name="amber_accent">#FFB020</color>
+    <color name="success_green">#34D399</color>
+    <color name="error_red">#F87171</color>
+    <color name="text_primary">#F5F3FA</color>
+    <color name="text_secondary">#B8B3C7</color>
+</resources>

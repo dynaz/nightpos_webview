@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Only the Odoo POS host is trusted; everything else uses the OS defaults (HTTPS only). -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">nightpos.com</domain>
+    </domain-config>
+
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

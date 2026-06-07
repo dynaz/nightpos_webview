@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NightPOS</string>
+
+    <!-- Dashboard -->
+    <string name="menu_open_pos">เปิดขาย</string>
+    <string name="menu_open_pos_desc">เปิดหน้าจอขายหน้าร้าน</string>
+    <string name="menu_reports">รายงาน</string>
+    <string name="menu_reports_desc">ดูรายงานยอดขายและสรุปผล</string>
+    <string name="menu_customers">ลูกค้า</string>
+    <string name="menu_customers_desc">จัดการข้อมูลลูกค้า</string>
+    <string name="menu_settings">ตั้งค่า</string>
+    <string name="menu_settings_desc">ปรับแต่งการตั้งค่าแอป</string>
+    <string name="menu_logout">ออกจากระบบ</string>
+    <string name="menu_logout_desc">ล้างเซสชันและออกจากระบบ</string>
+
+    <string name="dashboard_title">NightPOS</string>
+    <string name="dashboard_subtitle">ระบบจุดขายสำหรับร้านอาหารและไนท์คลับ</string>
+
+    <!-- Logout dialog -->
+    <string name="logout_dialog_title">ออกจากระบบ</string>
+    <string name="logout_dialog_message">คุณต้องการล้างเซสชันและออกจากระบบหรือไม่?</string>
+    <string name="logout_confirm">ออกจากระบบ</string>
+    <string name="logout_cancel">ยกเลิก</string>
+    <string name="logout_success">ออกจากระบบเรียบร้อยแล้ว</string>
+
+    <!-- WebView -->
+    <string name="webview_loading">กำลังโหลด…</string>
+    <string name="webview_exit_pos_title">ออกจากหน้าขาย</string>
+    <string name="webview_exit_pos_message">คุณต้องการออกจากหน้าขายและกลับสู่เมนูหลักหรือไม่?</string>
+    <string name="webview_exit_confirm">ออก</string>
+    <string name="webview_exit_cancel">อยู่ต่อ</string>
+
+    <!-- SSL error dialog -->
+    <string name="ssl_error_title">ใบรับรองความปลอดภัยไม่ถูกต้อง</string>
+    <string name="ssl_error_message">ไม่สามารถยืนยันความปลอดภัยของการเชื่อมต่อนี้ได้ คุณต้องการดำเนินการต่อหรือไม่?</string>
+    <string name="ssl_error_continue">ดำเนินการต่อ</string>
+    <string name="ssl_error_cancel">ยกเลิก</string>
+
+    <!-- Blocked navigation -->
+    <string name="blocked_domain_message">บล็อกการเข้าถึงโดเมนที่ไม่ได้รับอนุญาต: %1$s</string>
+
+    <!-- Offline -->
+    <string name="offline_title">ไม่มีการเชื่อมต่ออินเทอร์เน็ต</string>
+    <string name="offline_message">กรุณาตรวจสอบการเชื่อมต่อเครือข่ายของคุณแล้วลองอีกครั้ง</string>
+    <string name="offline_retry">ลองอีกครั้ง</string>
+    <string name="offline_auto_reconnect">กำลังตรวจสอบการเชื่อมต่อโดยอัตโนมัติ…</string>
+
+    <!-- Settings -->
+    <string name="settings_title">ตั้งค่า</string>
+    <string name="settings_section_general">ทั่วไป</string>
+    <string name="settings_section_pos">หน้าจอขาย</string>
+    <string name="settings_section_about">เกี่ยวกับ</string>
+
+    <string name="settings_server_url">ที่อยู่เซิร์ฟเวอร์ POS</string>
+    <string name="settings_server_url_desc">ที่อยู่ของระบบ Odoo POS ที่เชื่อมต่อ</string>
+
+    <string name="settings_kiosk_mode">โหมดคีออสก์ (Kiosk Mode)</string>
+    <string name="settings_kiosk_mode_desc">ซ่อนแถบระบบและล็อกหน้าจอขณะใช้งานหน้าขาย</string>
+
+    <string name="settings_keep_screen_on">ป้องกันหน้าจอดับ</string>
+    <string name="settings_keep_screen_on_desc">หน้าจอจะไม่ดับขณะเปิดใช้งานหน้าขาย</string>
+
+    <string name="settings_auto_reopen_pos">เปิดหน้าขายอัตโนมัติ</string>
+    <string name="settings_auto_reopen_pos_desc">เปิดหน้าขายขึ้นใหม่ทันทีหากถูกปิดโดยไม่ตั้งใจ (โหมดคีออสก์)</string>
+
+    <string name="settings_clear_data">ล้างข้อมูลแคชและคุกกี้</string>
+    <string name="settings_clear_data_desc">ลบข้อมูลที่เก็บไว้ของ WebView ทั้งหมด</string>
+    <string name="settings_clear_data_success">ล้างข้อมูลเรียบร้อยแล้ว</string>
+
+    <string name="settings_version">เวอร์ชันแอป</string>
+
+    <string name="action_back">ย้อนกลับ</string>
+    <string name="action_reload">โหลดหน้าใหม่</string>
+    <string name="action_close">ปิด</string>
+    <string name="action_save">บันทึก</string>
+
+    <!-- Kiosk exit confirmation -->
+    <string name="kiosk_exit_title">ออกจากโหมดคีออสก์</string>
+    <string name="kiosk_exit_message">คุณต้องการออกจากแอปหรือไม่? การดำเนินการนี้จะปิดระบบหน้าขาย</string>
+    <string name="kiosk_exit_confirm">ออกจากแอป</string>
+    <string name="kiosk_exit_cancel">ยกเลิก</string>
+
+    <!-- Permissions -->
+    <string name="permission_camera_rationale">แอปต้องการสิทธิ์เข้าถึงกล้องเพื่อใช้งานฟังก์ชันสแกนและอัปโหลดรูปภาพในหน้าขาย</string>
+    <string name="permission_location_rationale">แอปต้องการสิทธิ์เข้าถึงตำแหน่งเพื่อใช้งานฟังก์ชันบางอย่างของระบบ POS</string>
+    <string name="permission_denied">สิทธิ์ถูกปฏิเสธ บางฟังก์ชันอาจไม่สามารถใช้งานได้</string>
+
+    <!-- Splash -->
+    <string name="splash_loading">กำลังเริ่มต้นระบบ…</string>
+
+    <string name="content_desc_app_logo">โลโก้ NightPOS</string>
+    <string name="content_desc_menu_icon">ไอคอนเมนู</string>
+</resources>
