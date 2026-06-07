@@ -316,7 +316,7 @@ private fun AboutRow() {
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outline)
         Text(
-            text = "© NightPOS — Odoo POS wrapper for soho.nightpos.com",
+            text = "© NightPOS Soho — Odoo POS wrapper for soho.nightpos.com",
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary,
         )

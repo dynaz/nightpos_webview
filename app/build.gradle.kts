@@ -21,10 +21,23 @@ android {
         }
     }
 
+    signingConfigs {
+        // Committed keystore so every build (local or CI) produces the same signing
+        // certificate fingerprint — required so assetlinks.json verification for the
+        // Trusted Web Activity keeps matching regardless of where the APK was built.
+        create("nightpos") {
+            storeFile = file("${rootProject.projectDir}/keystore/nightpos-release.keystore")
+            storePassword = "nightpos123"
+            keyAlias = "nightpos"
+            keyPassword = "nightpos123"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("nightpos")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -34,6 +47,7 @@ android {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            signingConfig = signingConfigs.getByName("nightpos")
         }
     }
 
@@ -73,6 +87,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.material)
+    implementation(libs.androidx.browser)
+    implementation(libs.androidbrowserhelper)
 
     debugImplementation(libs.androidx.ui.tooling)
 }

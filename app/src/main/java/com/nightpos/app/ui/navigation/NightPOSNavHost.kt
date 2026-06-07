@@ -4,6 +4,7 @@ import android.webkit.WebView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NamedNavArgument
@@ -23,6 +24,7 @@ import com.nightpos.app.ui.screens.settings.SettingsViewModel
 import com.nightpos.app.ui.screens.splash.SplashScreen
 import com.nightpos.app.ui.screens.webview.WebViewScreen
 import com.nightpos.app.ui.screens.webview.WebViewViewModel
+import com.nightpos.app.twa.TwaLauncherActivity
 import com.nightpos.app.util.Constants
 
 /**
@@ -60,20 +62,24 @@ fun NightPOSNavHost(
             val dashboardViewModel: DashboardViewModel = viewModel(
                 factory = appContainer.dashboardViewModelFactory(),
             )
+            val context = LocalContext.current
+            val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
+
+            // Odoo destinations open in a Trusted Web Activity — rendered by the device's
+            // Chrome browser engine rather than the system WebView component, so devices
+            // whose WebView is too old for Odoo 19 can still run a modern UI.
+            fun launchTwa(url: String) {
+                context.startActivity(TwaLauncherActivity.createIntent(context, url))
+            }
+
             DashboardScreen(
                 viewModel = dashboardViewModel,
                 sharedWebView = sharedWebView,
                 onAction = { action ->
                     when (action) {
-                        DashboardAction.OpenPos -> navController.navigate(
-                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.POS),
-                        )
-                        DashboardAction.OpenReports -> navController.navigate(
-                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.REPORTS),
-                        )
-                        DashboardAction.OpenCustomers -> navController.navigate(
-                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.CUSTOMERS),
-                        )
+                        DashboardAction.OpenPos -> launchTwa(Constants.openPosUrl(baseUrl))
+                        DashboardAction.OpenReports -> launchTwa(Constants.reportsUrl(baseUrl))
+                        DashboardAction.OpenCustomers -> launchTwa(Constants.customersUrl(baseUrl))
                         DashboardAction.OpenSettings -> navController.navigate(NightPOSDestination.Settings.route)
                         DashboardAction.Logout -> Unit // handled internally by DashboardScreen's dialog
                     }

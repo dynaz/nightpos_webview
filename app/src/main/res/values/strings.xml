@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">NightPOS</string>
+    <string name="app_name">NightPOS Soho</string>
 
     <!-- Dashboard -->
     <string name="menu_open_pos">เปิดขาย</string>
@@ -14,7 +14,7 @@
     <string name="menu_logout">ออกจากระบบ</string>
     <string name="menu_logout_desc">ล้างเซสชันและออกจากระบบ</string>
 
-    <string name="dashboard_title">NightPOS</string>
+    <string name="dashboard_title">NightPOS Soho</string>
     <string name="dashboard_subtitle">ระบบจุดขายสำหรับร้านอาหารและไนท์คลับ</string>
 
     <!-- Logout dialog -->
@@ -89,6 +89,11 @@
     <!-- Splash -->
     <string name="splash_loading">กำลังเริ่มต้นระบบ…</string>
 
-    <string name="content_desc_app_logo">โลโก้ NightPOS</string>
+    <string name="content_desc_app_logo">โลโก้ NightPOS Soho</string>
+
+    <!-- Trusted Web Activity fallback URL (manifest meta-data requires a static resource;
+         the real launching URL is normally supplied at runtime via TwaLauncherActivity.EXTRA_URL,
+         built from Constants + the user's configured server URL). -->
+    <string name="twa_default_url" translatable="false">https://soho.nightpos.com/pos/ui</string>
     <string name="content_desc_menu_icon">ไอคอนเมนู</string>
 </resources>
