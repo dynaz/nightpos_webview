@@ -2,6 +2,7 @@ package com.nightpos.app.ui.screens.dashboard
 
 import android.webkit.WebView
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -64,6 +65,7 @@ private data class DashboardMenuItem(
 
 /** High-level navigation intents the dashboard can trigger; the host decides how to fulfil them. */
 sealed interface DashboardAction {
+    data object OpenNposHome : DashboardAction
     data object OpenPos : DashboardAction
     data object OpenReports : DashboardAction
     data object OpenCustomers : DashboardAction
@@ -98,7 +100,7 @@ fun DashboardScreen(
                 .statusBarsPadding()
                 .padding(horizontal = 32.dp, vertical = 24.dp),
         ) {
-            DashboardHeader()
+            DashboardHeader(onLogoClick = { onAction(DashboardAction.OpenNposHome) })
 
             Spacer(modifier = Modifier.size(24.dp))
 
@@ -200,13 +202,15 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun DashboardHeader() {
+private fun DashboardHeader(onLogoClick: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Surface(
             shape = CircleShape,
             color = NightBlack,
             border = androidx.compose.foundation.BorderStroke(1.dp, NeonPurple.copy(alpha = 0.5f)),
-            modifier = Modifier.size(72.dp),
+            modifier = Modifier
+                .size(72.dp)
+                .clickable(onClick = onLogoClick),
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_app_logo),

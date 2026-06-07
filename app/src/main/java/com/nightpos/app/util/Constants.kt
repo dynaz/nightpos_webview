@@ -15,10 +15,12 @@ object Constants {
 
     const val POS_PATH = "/pos/ui"
     const val BACKEND_PATH = "/web"
+    const val NPOS_HOME_PATH = "/npos"
     const val PRODUCTS_PATH = "/npos/action-770"
     const val DISCOUNT_LOYALTY_PATH = "/npos/discount-loyalty"
     const val GIFT_CARDS_PATH = "/npos/gift-cards-ewallet"
 
+    fun nposHomeUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$NPOS_HOME_PATH"
     fun openPosUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$POS_PATH"
     fun reportsUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$BACKEND_PATH"
     fun customersUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$BACKEND_PATH"

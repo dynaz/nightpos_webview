@@ -77,6 +77,7 @@ fun NightPOSNavHost(
                 sharedWebView = sharedWebView,
                 onAction = { action ->
                     when (action) {
+                        DashboardAction.OpenNposHome -> launchTwa(Constants.nposHomeUrl(baseUrl))
                         DashboardAction.OpenPos -> launchTwa(Constants.openPosUrl(baseUrl))
                         DashboardAction.OpenReports -> launchTwa(Constants.reportsUrl(baseUrl))
                         DashboardAction.OpenCustomers -> launchTwa(Constants.customersUrl(baseUrl))
