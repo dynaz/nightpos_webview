@@ -1,6 +1,7 @@
 package com.nightpos.app.ui.screens.settings
 
 import android.webkit.WebView
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -8,13 +9,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,13 +41,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nightpos.app.BuildConfig
@@ -50,6 +60,8 @@ import com.nightpos.app.R
 import com.nightpos.app.ui.theme.ErrorRed
 import com.nightpos.app.ui.theme.NeonPurple
 import com.nightpos.app.ui.theme.TextSecondary
+import com.nightpos.app.util.TwaDiagnostics
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -154,7 +166,11 @@ fun SettingsScreen(
             item { SectionHeader(stringResource(R.string.settings_section_about)) }
 
             item {
-                AboutRow()
+                AboutRow(
+                    serverUrl = uiState.serverUrl,
+                    snackbarHostState = snackbarHostState,
+                    scope = scope,
+                )
             }
         }
     }
@@ -296,11 +312,36 @@ private fun ClearDataRow(isClearing: Boolean, onClear: () -> Unit) {
     }
 }
 
+/** Tapping the version row this many times within [TAP_WINDOW_MS] reveals the diagnostics dialog. */
+private const val DIAGNOSTICS_TAP_COUNT = 5
+private const val TAP_WINDOW_MS = 2000L
+
 @Composable
-private fun AboutRow() {
+private fun AboutRow(
+    serverUrl: String,
+    snackbarHostState: SnackbarHostState,
+    scope: CoroutineScope,
+) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    val copiedMessage = stringResource(R.string.diagnostics_copied)
+    var tapCount by remember { mutableStateOf(0) }
+    var lastTapAtMs by remember { mutableLongStateOf(0L) }
+    var diagnosticsText by remember { mutableStateOf<String?>(null) }
+
     SettingsCard {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    val now = System.currentTimeMillis()
+                    tapCount = if (now - lastTapAtMs <= TAP_WINDOW_MS) tapCount + 1 else 1
+                    lastTapAtMs = now
+                    if (tapCount >= DIAGNOSTICS_TAP_COUNT) {
+                        tapCount = 0
+                        diagnosticsText = TwaDiagnostics.collect(context, serverUrl)
+                    }
+                },
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
@@ -319,6 +360,36 @@ private fun AboutRow() {
             text = "© NightPOS Soho — Odoo POS wrapper for soho.nightpos.com",
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary,
+        )
+    }
+
+    diagnosticsText?.let { text ->
+        AlertDialog(
+            onDismissRequest = { diagnosticsText = null },
+            title = { Text(stringResource(R.string.diagnostics_title)) },
+            text = {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState()),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    clipboardManager.setText(AnnotatedString(text))
+                    scope.launch { snackbarHostState.showSnackbar(message = copiedMessage) }
+                }) {
+                    Text(stringResource(R.string.diagnostics_copy))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { diagnosticsText = null }) {
+                    Text(stringResource(R.string.action_close))
+                }
+            },
         )
     }
 }

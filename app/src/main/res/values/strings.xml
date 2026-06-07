@@ -70,6 +70,12 @@
 
     <string name="settings_version">เวอร์ชันแอป</string>
 
+    <!-- Diagnostics (hidden: tap app version 5 times) -->
+    <string name="diagnostics_title">ข้อมูลวินิจฉัย</string>
+    <string name="diagnostics_copy">คัดลอก</string>
+    <string name="diagnostics_copied">คัดลอกข้อมูลวินิจฉัยแล้ว</string>
+
+
     <string name="action_back">ย้อนกลับ</string>
     <string name="action_reload">โหลดหน้าใหม่</string>
     <string name="action_close">ปิด</string>
