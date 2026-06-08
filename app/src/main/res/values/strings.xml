@@ -96,6 +96,8 @@
     <string name="settings_printer_printing">กำลังพิมพ์…</string>
     <string name="settings_printer_test_success">ทดสอบพิมพ์เรียบร้อยแล้ว</string>
     <string name="settings_printer_test_failed">ไม่สามารถเชื่อมต่อเครื่องพิมพ์ได้</string>
+    <string name="settings_printer_service_disabled">ยังไม่ได้เปิดใช้ Print Service</string>
+    <string name="settings_printer_service_disabled_desc">เครื่อง Sunmi T1 ไม่มีหน้า Settings → Printing ตามมาตรฐาน Android ให้รันคำสั่ง ADB ด้านล่างครั้งเดียวหลังติดตั้งแอป จากนั้นรีสตาร์ทแอปเพื่อเปิดใช้งาน:</string>
 
     <!-- PWA install -->
     <string name="pwa_install_title">ติดตั้ง NightPOS เป็น PWA</string>

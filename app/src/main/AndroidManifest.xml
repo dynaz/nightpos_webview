@@ -4,6 +4,10 @@
 
     <!-- Network -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Granted via ADB on Sunmi T1 so the app can self-enable its PrintService
+         on devices (like this one) where Settings → Printing doesn't exist. -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 

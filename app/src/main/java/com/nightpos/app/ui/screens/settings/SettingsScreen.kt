@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import com.nightpos.app.BuildConfig
 import com.nightpos.app.R
+import com.nightpos.app.print.PrintServiceEnabler
 import com.nightpos.app.print.SunmiPrinterConnection
 import com.nightpos.app.ui.theme.ErrorRed
 import com.nightpos.app.ui.theme.NeonPurple
@@ -545,8 +546,34 @@ private fun PrinterSection(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var isPrinting by remember { mutableStateOf(false) }
+    val hasPermission = remember { PrintServiceEnabler.hasWriteSecureSettings(context) }
     val testSuccessMsg = stringResource(R.string.settings_printer_test_success)
     val testFailedMsg = stringResource(R.string.settings_printer_test_failed)
+
+    if (!hasPermission) {
+        SettingsCard {
+            Text(
+                text = stringResource(R.string.settings_printer_service_disabled),
+                style = MaterialTheme.typography.titleMedium,
+                color = ErrorRed,
+            )
+            Text(
+                text = stringResource(R.string.settings_printer_service_disabled_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+            )
+            Text(
+                text = PrintServiceEnabler.adbGrantCommand(context),
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+            )
+        }
+    }
 
     SettingsCard {
         Text(

@@ -96,6 +96,8 @@
     <string name="settings_printer_printing">Printing…</string>
     <string name="settings_printer_test_success">Test print successful</string>
     <string name="settings_printer_test_failed">Could not connect to printer</string>
+    <string name="settings_printer_service_disabled">Print Service not enabled</string>
+    <string name="settings_printer_service_disabled_desc">The Sunmi T1 firmware has no Settings → Printing screen. Run the ADB command below once after installing the app, then restart it to activate the print service:</string>
 
     <!-- PWA install -->
     <string name="pwa_install_title">Install NightPOS as a PWA</string>
