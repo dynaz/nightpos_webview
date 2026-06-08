@@ -49,12 +49,16 @@ jobs:
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
+        # Actions artifact storage is a separate quota from release assets below;
+        # don't let it block the release step when that quota is exhausted.
+        continue-on-error: true
         with:
           name: ${{ steps.apk.outputs.name }}
           path: app/build/outputs/apk/debug/*.apk
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: nightpos-release-aab
           path: app/build/outputs/bundle/release/*.aab
