@@ -6,12 +6,22 @@ Google Play requires an **Android App Bundle (`.aab`)**, not an APK, for new
 app submissions. CI now builds one automatically:
 
 - Workflow: [`.github/workflows/build-release.yml`](.github/workflows/build-release.yml)
-- Trigger it from the **Actions** tab (`Build APK and Release` → **Run workflow**
-  on `claude/nightpos-android-app-iwCbi`, or push a `v*` tag), then download the
-  **`nightpos-release-aab`** artifact — it contains `app-release.aab`, signed
-  with the committed `keystore/nightpos-release.keystore` (alias `nightpos`,
-  password `nightpos123` — see [`TWA.md`](TWA.md) for the full keystore story
-  and the asset-links fingerprint it produces).
+- Trigger it from the **Actions** tab (`Build APK and Release` → **Run workflow**)
+  or push a `v*` tag. Each run also publishes a **GitHub Release** (tag
+  `build-<version>-<short-sha>` for manual runs) with `app-release.aab` and the
+  debug APK attached as release assets — e.g.
+  https://github.com/dynaz/nightpos_webview/releases/tag/build-1.0.0-9bf11e4
+  has `app-release.aab` ready to download right now.
+- (There's also an `nightpos-release-aab` Actions-artifact upload step, but
+  Actions artifact storage on this repo is currently at quota — "Usage is
+  recalculated every 6-12 hours" — so the **Release assets are the reliable
+  way to grab the build** until that clears. You can free it up sooner by
+  deleting old artifacts/logs from old workflow runs under the repo's
+  **Actions** tab.)
+- `app-release.aab` is signed with the committed
+  `keystore/nightpos-release.keystore` (alias `nightpos`, password
+  `nightpos123` — see [`TWA.md`](TWA.md) for the full keystore story and the
+  asset-links fingerprint it produces).
 
 Upload that `.aab` directly under **Play Console → Production (or Internal
 testing) → Create new release**.
