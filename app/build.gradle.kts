@@ -10,9 +10,11 @@ android {
 
     defaultConfig {
         applicationId = "com.nightpos.app"
-        // 24 = Android 7.0 (Nougat) — GeckoView 120+ dropped Android 6 support.
-        // Sunmi T2 runs Android 7.1.1 (API 25) so API 24 is the correct floor.
-        minSdk = 24
+        // 21 = Android 5.0 — GeckoView 142 supports API 21+.
+        // Sunmi T2 runs Android 7.1.1 (API 25), well above this floor.
+        // Note: GeckoView 143+ raised minSdk to 26 (Android 8.0), so 142 is the
+        // highest version that can run on the T2's Android 7.1.1.
+        minSdk = 21
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
@@ -21,7 +23,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        buildConfigField("String", "GECKOVIEW_VERSION", "\"150.0\"")
+        buildConfigField("String", "GECKOVIEW_VERSION", "\"142.0\"")
     }
 
     signingConfigs {
@@ -94,8 +96,8 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.sunmi.printerlibrary)
     // ARM64-only variant — Sunmi T2 is arm64-v8a, Android 7.1.1 (API 25).
-    // GeckoView 150 requires API 24+ (Firefox 120 dropped Android 6 support).
-    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:150.0.20260511200624")
+    // v142 is the highest GeckoView that supports API 21+ (v143+ raised floor to API 26).
+    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
     // Local HTTP server for printer bridge (avoids SELinux socket-ioctl restriction
     // that prevents GeckoView IPC from working on kernel 3.10 / Android 6.0.1).
     implementation("org.nanohttpd:nanohttpd:2.3.1")
