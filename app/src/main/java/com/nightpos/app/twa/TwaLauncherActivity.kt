@@ -4,88 +4,59 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsClient
-import com.google.androidbrowserhelper.trusted.LauncherActivity
+import androidx.browser.customtabs.CustomTabsIntent
 import com.nightpos.app.util.TwaLaunchLog
 
 /**
- * Launches the Odoo backend in an external browser.
+ * Launches a URL in an external browser.
  *
- * Sunmi T1 terminals (Android 6.0.1) ship with a Chrome/system-WebView build too
- * old to render Odoo 19, so this prefers handing off to **Firefox** (explicit
- * package match) whose modern Gecko engine renders it correctly. If Firefox isn't
- * installed, it falls back to the original Trusted Web Activity (rendered by
- * whatever Custom Tabs provider — normally Chrome — is available), and finally to
- * a plain browser Intent so the buttons always do something useful.
+ * Priority order:
+ *  1. Firefox (explicit package) — modern Gecko engine needed on Sunmi T1 / Android 6.0.1
+ *     where the system WebView / Chrome build is too old for Odoo 19.
+ *  2. Custom Tabs provider (Chrome or other) — if Firefox isn't installed.
+ *  3. Plain ACTION_VIEW — last resort if no Custom Tabs provider exists.
  *
- * [LauncherActivity] normally reads its URL from the `DEFAULT_URL` manifest
- * meta-data, but the Dashboard passes the URL via [EXTRA_URL] instead so it can
- * point to different destinations (POS / Reports / etc.) without separate activities.
+ * Does NOT extend [com.google.androidbrowserhelper.trusted.LauncherActivity] because
+ * that base class calls finish() early when the activity is not the task root (first
+ * launch from another task), preventing our Firefox-first logic from running.
  */
-class TwaLauncherActivity : LauncherActivity() {
+class TwaLauncherActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // LauncherActivity.onCreate() performs its own setup and may decide to
-        // finish() early (e.g. a TWA is already running) — always call through
-        // to it first (Activity.onCreate() must be invoked or the framework
-        // throws SuperNotCalledException), then bail out if it already finished.
         super.onCreate(savedInstanceState)
-        if (isFinishing) return
 
-        val url = resolveUrl()
+        val url = intent?.getStringExtra(EXTRA_URL)?.takeIf { it.isNotBlank() }
+            ?: run { finish(); return }
         val uri = Uri.parse(url)
 
-        if (launchInFirefox(uri)) {
-            finish()
-            return
+        when {
+            launchInFirefox(uri, url) -> Unit
+            launchInCustomTabs(uri, url) -> Unit
+            else -> {
+                TwaLaunchLog.append(this, "WARN url=$url provider=NONE — fallback to system browser")
+                runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+            }
         }
 
-        val provider = CustomTabsClient.getPackageName(this, null)
-        logLaunch(url, provider)
-
-        if (provider == null) {
-            // No Custom Tabs / TWA provider — open in whatever browser the device has.
-            startActivity(Intent(Intent.ACTION_VIEW, uri))
-            finish()
-            return
-        }
-
-        launchTwa()
+        finish()
     }
 
-    // shouldLaunchImmediately() == false defers launchTwa() to onCreate() above
-    // so the Firefox/no-provider checks can run first instead of always TWA-ing.
-    override fun shouldLaunchImmediately(): Boolean = false
-
-    override fun getLaunchingUrl(): Uri = Uri.parse(resolveUrl())
-
-    private fun resolveUrl(): String =
-        intent?.getStringExtra(EXTRA_URL)?.takeIf { it.isNotBlank() }
-            ?: super.getLaunchingUrl().toString()
-
-    /**
-     * Explicitly targets the Firefox package so the URL opens there instead of
-     * through Custom Tabs/TWA (which always renders with Chrome). Returns false
-     * — without starting anything — if Firefox isn't installed, so callers can
-     * fall through to the TWA/system-browser paths below.
-     */
-    private fun launchInFirefox(uri: Uri): Boolean {
-        val firefoxIntent = Intent(Intent.ACTION_VIEW, uri).setPackage(FIREFOX_PACKAGE)
-        if (packageManager.resolveActivity(firefoxIntent, 0) == null) return false
-
-        return runCatching { startActivity(firefoxIntent) }
-            .onSuccess { TwaLaunchLog.append(this, "INFO url=$uri provider=$FIREFOX_PACKAGE (explicit Firefox handoff)") }
+    private fun launchInFirefox(uri: Uri, url: String): Boolean {
+        val intent = Intent(Intent.ACTION_VIEW, uri).setPackage(FIREFOX_PACKAGE)
+        if (packageManager.resolveActivity(intent, 0) == null) return false
+        return runCatching { startActivity(intent) }
+            .onSuccess { TwaLaunchLog.append(this, "INFO url=$url provider=$FIREFOX_PACKAGE") }
             .isSuccess
     }
 
-    private fun logLaunch(url: String, provider: String?) {
-        val entry = if (provider == null) {
-            "WARN url=$url provider=NONE — no Custom Tabs provider; falling back to system browser"
-        } else {
-            val version = runCatching { packageManager.getPackageInfo(provider, 0).versionName }.getOrNull()
-            "INFO url=$url provider=$provider${version?.let { "@$it" } ?: ""}"
-        }
-        TwaLaunchLog.append(this, entry)
+    private fun launchInCustomTabs(uri: Uri, url: String): Boolean {
+        val provider = CustomTabsClient.getPackageName(this, null) ?: return false
+        return runCatching {
+            CustomTabsIntent.Builder().build().launchUrl(this, uri)
+        }.onSuccess { TwaLaunchLog.append(this, "INFO url=$url provider=$provider (CustomTabs)") }
+            .isSuccess
     }
 
     companion object {
