@@ -25,6 +25,13 @@ import com.nightpos.app.util.TwaLaunchLog
 class TwaLauncherActivity : LauncherActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // LauncherActivity.onCreate() performs its own setup and may decide to
+        // finish() early (e.g. a TWA is already running) — always call through
+        // to it first (Activity.onCreate() must be invoked or the framework
+        // throws SuperNotCalledException), then bail out if it already finished.
+        super.onCreate(savedInstanceState)
+        if (isFinishing) return
+
         val url = resolveUrl()
         val uri = Uri.parse(url)
 
@@ -43,8 +50,12 @@ class TwaLauncherActivity : LauncherActivity() {
             return
         }
 
-        super.onCreate(savedInstanceState)
+        launchTwa()
     }
+
+    // shouldLaunchImmediately() == false defers launchTwa() to onCreate() above
+    // so the Firefox/no-provider checks can run first instead of always TWA-ing.
+    override fun shouldLaunchImmediately(): Boolean = false
 
     override fun getLaunchingUrl(): Uri = Uri.parse(resolveUrl())
 
