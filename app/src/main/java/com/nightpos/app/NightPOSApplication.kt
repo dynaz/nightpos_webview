@@ -47,6 +47,16 @@ class NightPOSApplication : Application() {
                 .configFilePath(configFile.absolutePath)
                 .build(),
         )
+
+        // Install built-in extension that polyfills Promise.withResolvers (added
+        // in Firefox 121) and structuredClone (Firefox 94) — both required by
+        // Odoo 19 but missing in GeckoView 99.
+        geckoRuntime.webExtensionController
+            .ensureBuiltIn("resource://android/assets/extensions/polyfill/", "polyfill@nightpos")
+            .accept(
+                { Log.i("NightPOS", "Polyfill extension installed") },
+                { e -> Log.w("NightPOS", "Polyfill extension error: ${e?.message}") },
+            )
     }
 
     private fun isMainProcess(): Boolean {
