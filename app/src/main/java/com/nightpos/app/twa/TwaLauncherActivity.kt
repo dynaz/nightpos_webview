@@ -9,10 +9,14 @@ import com.google.androidbrowserhelper.trusted.LauncherActivity
 import com.nightpos.app.util.TwaLaunchLog
 
 /**
- * Launches the Odoo backend in a Trusted Web Activity rendered by Chrome.
+ * Launches the Odoo backend in an external browser.
  *
- * Falls back to a plain browser Intent when no Custom Tabs provider is available
- * (e.g. Chrome not installed / disabled) so buttons always do something useful.
+ * Sunmi T1 terminals (Android 6.0.1) ship with a Chrome/system-WebView build too
+ * old to render Odoo 19, so this prefers handing off to **Firefox** (explicit
+ * package match) whose modern Gecko engine renders it correctly. If Firefox isn't
+ * installed, it falls back to the original Trusted Web Activity (rendered by
+ * whatever Custom Tabs provider — normally Chrome — is available), and finally to
+ * a plain browser Intent so the buttons always do something useful.
  *
  * [LauncherActivity] normally reads its URL from the `DEFAULT_URL` manifest
  * meta-data, but the Dashboard passes the URL via [EXTRA_URL] instead so it can
@@ -22,12 +26,19 @@ class TwaLauncherActivity : LauncherActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val url = resolveUrl()
+        val uri = Uri.parse(url)
+
+        if (launchInFirefox(uri)) {
+            finish()
+            return
+        }
+
         val provider = CustomTabsClient.getPackageName(this, null)
         logLaunch(url, provider)
 
         if (provider == null) {
             // No Custom Tabs / TWA provider — open in whatever browser the device has.
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
             finish()
             return
         }
@@ -41,6 +52,21 @@ class TwaLauncherActivity : LauncherActivity() {
         intent?.getStringExtra(EXTRA_URL)?.takeIf { it.isNotBlank() }
             ?: super.getLaunchingUrl().toString()
 
+    /**
+     * Explicitly targets the Firefox package so the URL opens there instead of
+     * through Custom Tabs/TWA (which always renders with Chrome). Returns false
+     * — without starting anything — if Firefox isn't installed, so callers can
+     * fall through to the TWA/system-browser paths below.
+     */
+    private fun launchInFirefox(uri: Uri): Boolean {
+        val firefoxIntent = Intent(Intent.ACTION_VIEW, uri).setPackage(FIREFOX_PACKAGE)
+        if (packageManager.resolveActivity(firefoxIntent, 0) == null) return false
+
+        return runCatching { startActivity(firefoxIntent) }
+            .onSuccess { TwaLaunchLog.append(this, "INFO url=$uri provider=$FIREFOX_PACKAGE (explicit Firefox handoff)") }
+            .isSuccess
+    }
+
     private fun logLaunch(url: String, provider: String?) {
         val entry = if (provider == null) {
             "WARN url=$url provider=NONE — no Custom Tabs provider; falling back to system browser"
@@ -53,6 +79,7 @@ class TwaLauncherActivity : LauncherActivity() {
 
     companion object {
         private const val EXTRA_URL = "com.nightpos.app.twa.EXTRA_URL"
+        private const val FIREFOX_PACKAGE = "org.mozilla.firefox"
 
         fun createIntent(context: Context, url: String): Intent =
             Intent(context, TwaLauncherActivity::class.java).apply {

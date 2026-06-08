@@ -65,9 +65,11 @@ fun NightPOSNavHost(
             val context = LocalContext.current
             val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
 
-            // Odoo destinations open in a Trusted Web Activity — rendered by the device's
-            // Chrome browser engine rather than the system WebView component, so devices
-            // whose WebView is too old for Odoo 19 can still run a modern UI.
+            // Odoo destinations open in an external browser rather than the in-app
+            // WebView. TwaLauncherActivity prefers handing off to Firefox (modern Gecko
+            // engine — needed on Sunmi T1 / Android 6.0.1 where Chrome is too old to
+            // render Odoo 19) and falls back to a Trusted Web Activity / system browser
+            // when Firefox isn't installed.
             fun launchTwa(url: String) {
                 context.startActivity(TwaLauncherActivity.createIntent(context, url))
             }
