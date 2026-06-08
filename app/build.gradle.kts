@@ -91,6 +91,8 @@ dependencies {
     implementation(libs.androidbrowserhelper)
     implementation(libs.androidx.appcompat)
     implementation(libs.sunmi.printerlibrary)
+    // ARM64-only variant keeps APK size manageable on Sunmi T1 (arm64-v8a).
+    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:143.0.20251003115653")
 
     debugImplementation(libs.androidx.ui.tooling)
 }

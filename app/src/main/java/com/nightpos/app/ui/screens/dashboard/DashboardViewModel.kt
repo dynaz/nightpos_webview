@@ -1,6 +1,5 @@
 package com.nightpos.app.ui.screens.dashboard
 
-import android.webkit.WebView
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nightpos.app.data.SessionManager
@@ -8,8 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.mozilla.geckoview.GeckoSession
 
-/** UI state for the dashboard's logout confirmation flow. */
 data class DashboardUiState(
     val showLogoutDialog: Boolean = false,
     val isLoggingOut: Boolean = false,
@@ -31,15 +30,10 @@ class DashboardViewModel(
         _uiState.value = _uiState.value.copy(showLogoutDialog = false)
     }
 
-    /**
-     * Clears all WebView session data (cookies, cache, storage). [webView] is the
-     * shared WebView instance if one has already been created (i.e. the user opened
-     * POS/Reports/Customers before logging out); it may be null otherwise.
-     */
-    fun confirmLogout(webView: WebView?) {
+    fun confirmLogout(session: GeckoSession?) {
         _uiState.value = _uiState.value.copy(showLogoutDialog = false, isLoggingOut = true)
         viewModelScope.launch {
-            sessionManager.clearSession(webView)
+            sessionManager.clearSession(session)
             _uiState.value = _uiState.value.copy(isLoggingOut = false, logoutCompleted = true)
         }
     }

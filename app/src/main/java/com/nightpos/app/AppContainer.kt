@@ -11,18 +11,12 @@ import com.nightpos.app.ui.screens.dashboard.DashboardViewModel
 import com.nightpos.app.ui.screens.settings.SettingsViewModel
 import com.nightpos.app.ui.screens.webview.WebViewViewModel
 
-/**
- * Lightweight, hand-rolled dependency container (the project intentionally avoids
- * Hilt/Dagger to keep the single-module app simple and the build fast). Owns all
- * singletons and exposes [ViewModelProvider.Factory] builders so screens can
- * obtain ViewModels via `viewModel(factory = ...)` without a DI framework.
- */
 class AppContainer(context: Context) {
 
     private val appContext = context.applicationContext
 
     val preferencesManager: PreferencesManager by lazy { PreferencesManager(appContext) }
-    val sessionManager: SessionManager by lazy { SessionManager(appContext) }
+    val sessionManager: SessionManager by lazy { SessionManager() }
     val connectivityObserver: NetworkConnectivityObserver by lazy { NetworkConnectivityObserver(appContext) }
 
     fun dashboardViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {

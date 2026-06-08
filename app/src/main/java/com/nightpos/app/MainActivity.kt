@@ -17,25 +17,19 @@ import com.nightpos.app.ui.navigation.NightPOSNavHost
 import com.nightpos.app.ui.screens.settings.SettingsUiState
 import com.nightpos.app.ui.theme.NightPOSTheme
 import com.nightpos.app.util.AutoReopenPosEffect
-import com.nightpos.app.webview.WebViewFactory
+import com.nightpos.app.webview.GeckoSessionFactory
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.GeckoView
 
-/**
- * Single Activity hosting the entire NightPOS UI (Single-Activity Architecture).
- *
- * Owns the one shared [android.webkit.WebView] instance for the whole app —
- * created once here, configured via [WebViewFactory], and threaded through the
- * navigation graph so the Odoo SPA's session survives screen switches and so
- * logout has a single place to clear from.
- */
 class MainActivity : ComponentActivity() {
 
     private lateinit var appContainer: AppContainer
     private var sunmiJsBridge: SunmiJsBridge? = null
+    private var geckoSession: GeckoSession? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Must be called before super.onCreate() / setContent.
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -45,14 +39,22 @@ class MainActivity : ComponentActivity() {
         setContent {
             NightPOSTheme {
                 val context = LocalContext.current
-                val sharedWebView = remember {
-                    WebViewFactory.create(context).also { wv ->
+
+                // One GeckoView + one GeckoSession shared across all screens so the
+                // Odoo SPA session survives navigation between Dashboard tabs.
+                val sharedGeckoView = remember {
+                    GeckoView(context).also { view ->
+                        val session = GeckoSessionFactory.create()
                         val bridge = SunmiJsBridge(context)
                         bridge.bindPrinter()
-                        wv.addJavascriptInterface(bridge, "NightPOSBridge")
+                        session.promptDelegate = bridge.geckoPromptDelegate
+                        session.open(NightPOSApplication.geckoRuntime)
+                        view.setSession(session)
+                        geckoSession = session
                         sunmiJsBridge = bridge
                     }
                 }
+
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
 
@@ -86,7 +88,7 @@ class MainActivity : ComponentActivity() {
 
                 NightPOSNavHost(
                     appContainer = appContainer,
-                    sharedWebView = sharedWebView,
+                    sharedGeckoView = sharedGeckoView,
                     isOnline = isOnline,
                     navController = navController,
                 )
@@ -97,6 +99,8 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         sunmiJsBridge?.unbindPrinter()
         sunmiJsBridge = null
+        geckoSession?.close()
+        geckoSession = null
         super.onDestroy()
     }
 }

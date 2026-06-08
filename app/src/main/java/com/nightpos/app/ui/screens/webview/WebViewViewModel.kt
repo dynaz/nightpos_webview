@@ -19,6 +19,7 @@ data class WebViewUiState(
     val pageError: PageError? = null,
     val blockedDomainMessage: String? = null,
     val showExitConfirmation: Boolean = false,
+    val currentUrl: String? = null,
 )
 
 /**
@@ -60,4 +61,6 @@ class WebViewViewModel : ViewModel() {
     fun dismissExit() = _uiState.update { it.copy(showExitConfirmation = false) }
 
     fun updateCanGoBack(canGoBack: Boolean) = _uiState.update { it.copy(canGoBack = canGoBack) }
+
+    fun setCurrentUrl(url: String) = _uiState.update { it.copy(currentUrl = url) }
 }

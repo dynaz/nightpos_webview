@@ -1,6 +1,5 @@
 package com.nightpos.app.ui.navigation
 
-import android.webkit.WebView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,18 +25,17 @@ import com.nightpos.app.ui.screens.webview.WebViewScreen
 import com.nightpos.app.ui.screens.webview.WebViewViewModel
 import com.nightpos.app.twa.TwaLauncherActivity
 import com.nightpos.app.util.Constants
+import org.mozilla.geckoview.GeckoView
 
 /**
- * Single-Activity navigation graph. A single shared [WebView] is created once
- * (in [com.nightpos.app.MainActivity]) and threaded through every screen that
- * needs it (Dashboard for logout, Settings for "clear data", WebViewScreen for
- * display) — this keeps the Odoo SPA's session/state alive while switching
- * between "เปิดขาย / รายงาน / ลูกค้า" tabs, and gives logout one place to clear from.
+ * Single-Activity navigation graph. A single shared [GeckoView] (backed by one
+ * GeckoSession) is created in [com.nightpos.app.MainActivity] and threaded through
+ * every screen that needs it so the Odoo SPA session survives tab switches.
  */
 @Composable
 fun NightPOSNavHost(
     appContainer: AppContainer,
-    sharedWebView: WebView,
+    sharedGeckoView: GeckoView,
     isOnline: Boolean,
     navController: NavHostController = rememberNavController(),
 ) {
@@ -65,35 +63,30 @@ fun NightPOSNavHost(
             val context = LocalContext.current
             val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
 
-            // Odoo destinations open in an external browser rather than the in-app
-            // WebView. TwaLauncherActivity prefers handing off to Firefox (modern Gecko
-            // engine — needed on Sunmi T1 / Android 6.0.1 where Chrome is too old to
-            // render Odoo 19) and falls back to a Trusted Web Activity / system browser
-            // when Firefox isn't installed.
             fun launchTwa(url: String) {
                 context.startActivity(TwaLauncherActivity.createIntent(context, url))
             }
 
             DashboardScreen(
                 viewModel = dashboardViewModel,
-                sharedWebView = sharedWebView,
+                sharedGeckoView = sharedGeckoView,
                 onAction = { action ->
                     when (action) {
                         DashboardAction.OpenNposHome -> launchTwa(Constants.nposHomeUrl(baseUrl))
-                        DashboardAction.OpenPos -> launchTwa(Constants.openPosUrl(baseUrl))
+                        DashboardAction.OpenPos -> navController.navigate(
+                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.POS)
+                        )
                         DashboardAction.OpenReports -> launchTwa(Constants.reportsUrl(baseUrl))
                         DashboardAction.OpenCustomers -> launchTwa(Constants.customersUrl(baseUrl))
                         DashboardAction.OpenProducts -> launchTwa(Constants.productsUrl(baseUrl))
                         DashboardAction.OpenDiscountLoyalty -> launchTwa(Constants.discountLoyaltyUrl(baseUrl))
                         DashboardAction.OpenGiftCards -> launchTwa(Constants.giftCardsUrl(baseUrl))
                         DashboardAction.OpenSettings -> navController.navigate(NightPOSDestination.Settings.route)
-                        DashboardAction.Logout -> Unit // handled internally by DashboardScreen's dialog
+                        DashboardAction.Logout -> Unit
                     }
                 },
                 onLoggedOut = {
-                    // WebView is already cleared by DashboardViewModel; just reset to a blank page
-                    // so the next "Open POS" starts a fresh, unauthenticated session.
-                    sharedWebView.loadUrl("about:blank")
+                    sharedGeckoView.session?.loadUri("about:blank")
                 },
             )
         }
@@ -126,7 +119,7 @@ fun NightPOSNavHost(
                 kind = kind,
                 title = title,
                 url = url,
-                webView = sharedWebView,
+                geckoView = sharedGeckoView,
                 viewModel = webViewViewModel,
                 isOnline = isOnline,
                 kioskModeEnabled = settingsState.kioskModeEnabled && kind == WebViewKind.POS,
@@ -140,7 +133,7 @@ fun NightPOSNavHost(
         composable(NightPOSDestination.Settings.route) {
             SettingsScreen(
                 viewModel = settingsViewModel,
-                sharedWebView = sharedWebView,
+                sharedGeckoView = sharedGeckoView,
                 onBack = { navController.popBackStack() },
             )
         }

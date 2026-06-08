@@ -5,7 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.net.Uri
-import android.webkit.WebView
+import org.mozilla.geckoview.GeckoView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -87,7 +87,7 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    sharedWebView: WebView?,
+    sharedGeckoView: GeckoView?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -191,7 +191,7 @@ fun SettingsScreen(
                 ClearDataRow(
                     isClearing = uiState.isClearingData || event == SettingsEvent.ClearingStarted,
                     onClear = {
-                        scope.launch { viewModel.clearWebViewData(sharedWebView) }
+                        scope.launch { viewModel.clearWebViewData(sharedGeckoView?.session) }
                     },
                 )
             }

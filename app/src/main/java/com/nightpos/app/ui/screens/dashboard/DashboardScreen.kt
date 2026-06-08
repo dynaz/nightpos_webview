@@ -1,6 +1,6 @@
 package com.nightpos.app.ui.screens.dashboard
 
-import android.webkit.WebView
+import org.mozilla.geckoview.GeckoView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -79,7 +79,7 @@ sealed interface DashboardAction {
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
-    sharedWebView: WebView?,
+    sharedGeckoView: GeckoView?,
     onAction: (DashboardAction) -> Unit,
     onLoggedOut: () -> Unit,
     modifier: Modifier = Modifier,
@@ -191,7 +191,7 @@ fun DashboardScreen(
 
     if (uiState.showLogoutDialog) {
         LogoutConfirmationDialog(
-            onConfirm = { viewModel.confirmLogout(sharedWebView) },
+            onConfirm = { viewModel.confirmLogout(sharedGeckoView?.session) },
             onDismiss = { viewModel.dismissLogoutDialog() },
         )
     }

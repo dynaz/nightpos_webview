@@ -27,8 +27,47 @@ const _devicePrefsByConfigId = new Map();
 /** @type {string|null} */
 let _deviceKey = null;
 
+/**
+ * Install window.flutter_inappwebview if we are inside the NightPOS GeckoView
+ * (where the native PromptDelegate intercepts window.prompt("nightpos:…", …)).
+ * Must be called before any code that checks for flutter_inappwebview.
+ */
+function _installGeckoViewBridgeIfNeeded() {
+    if (typeof window === "undefined") return;
+    if (window.flutter_inappwebview || window.NightPOSBridge) return;
+    // Probe: send a cheap synchronous prompt that the delegate answers instantly.
+    // In a normal browser, window.prompt() returns null (user cancelled / no intercept).
+    // The NightPOS PromptDelegate always responds to "nightpos:ping" with "pong".
+    try {
+        const probe = window.prompt("nightpos:ping", "{}");
+        if (probe !== null) {
+            // We are inside GeckoView with the NightPOS PromptDelegate — install shim.
+            window.flutter_inappwebview = {
+                callHandler: function (handlerName, args) {
+                    return new Promise(function (resolve, reject) {
+                        try {
+                            const result = window.prompt(
+                                "nightpos:" + handlerName,
+                                JSON.stringify(args || {})
+                            );
+                            resolve(result ? JSON.parse(result) : { success: false, error: "no result" });
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                },
+            };
+            console.log("[NightPOS] GeckoView bridge installed");
+        }
+    } catch (_) {
+        /* not in NightPOS */
+    }
+}
+
+_installGeckoViewBridgeIfNeeded();
+
 export function isNightposAppAvailable() {
-    // flutter_inappwebview = Flutter InAppWebView (original target)
+    // flutter_inappwebview = Flutter InAppWebView OR GeckoView shim (installed above)
     // NightPOSBridge = standard Android WebView with SunmiJsBridge injected
     return typeof window.flutter_inappwebview !== "undefined" ||
            typeof window.NightPOSBridge !== "undefined";
