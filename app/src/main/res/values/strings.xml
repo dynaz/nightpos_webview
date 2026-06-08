@@ -85,6 +85,18 @@
     <string name="language_thai">ไทย (Thai)</string>
     <string name="language_english">English</string>
 
+    <!-- Printer settings -->
+    <string name="settings_section_printer">เครื่องพิมพ์ (Sunmi)</string>
+    <string name="settings_printer_paper_width">ขนาดกระดาษ</string>
+    <string name="settings_printer_paper_width_desc">เลือกขนาดกระดาษความร้อนของเครื่องพิมพ์ Sunmi</string>
+    <string name="settings_printer_paper_58mm">58 mm</string>
+    <string name="settings_printer_paper_80mm">80 mm</string>
+    <string name="settings_printer_test">ทดสอบพิมพ์</string>
+    <string name="settings_printer_test_desc">พิมพ์หน้าทดสอบเพื่อตรวจสอบเครื่องพิมพ์ Sunmi</string>
+    <string name="settings_printer_printing">กำลังพิมพ์…</string>
+    <string name="settings_printer_test_success">ทดสอบพิมพ์เรียบร้อยแล้ว</string>
+    <string name="settings_printer_test_failed">ไม่สามารถเชื่อมต่อเครื่องพิมพ์ได้</string>
+
     <!-- PWA install -->
     <string name="pwa_install_title">ติดตั้ง NightPOS เป็น PWA</string>
     <string name="pwa_install_desc">เปิดในเบราว์เซอร์แล้วติดตั้งลงหน้าจอหลัก — ใช้งานได้แบบ full-screen โดยไม่ต้องมี Chrome</string>

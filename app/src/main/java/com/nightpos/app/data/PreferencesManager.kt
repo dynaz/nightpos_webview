@@ -3,6 +3,7 @@ package com.nightpos.app.data
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.nightpos.app.util.Constants
@@ -23,6 +24,7 @@ class PreferencesManager(private val context: Context) {
         val KIOSK_MODE = booleanPreferencesKey("kiosk_mode")
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val AUTO_REOPEN_POS = booleanPreferencesKey("auto_reopen_pos")
+        val PRINTER_PAPER_WIDTH_MM = intPreferencesKey("printer_paper_width_mm")
     }
 
     val serverUrl: Flow<String> = context.dataStore.data.map { prefs ->
@@ -41,6 +43,10 @@ class PreferencesManager(private val context: Context) {
         prefs[Keys.AUTO_REOPEN_POS] ?: false
     }
 
+    val printerPaperWidthMm: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[Keys.PRINTER_PAPER_WIDTH_MM] ?: 58
+    }
+
     suspend fun setServerUrl(url: String) {
         context.dataStore.edit { it[Keys.SERVER_URL] = url.trim().trimEnd('/') }
     }
@@ -55,5 +61,9 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun setAutoReopenPosEnabled(enabled: Boolean) {
         context.dataStore.edit { it[Keys.AUTO_REOPEN_POS] = enabled }
+    }
+
+    suspend fun setPrinterPaperWidthMm(widthMm: Int) {
+        context.dataStore.edit { it[Keys.PRINTER_PAPER_WIDTH_MM] = widthMm }
     }
 }

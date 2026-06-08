@@ -7,6 +7,9 @@ import android.graphics.pdf.PdfRenderer
 import android.printservice.PrintJob
 import android.printservice.PrintService
 import android.printservice.PrinterDiscoverySession
+import com.nightpos.app.data.PreferencesManager
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 /**
  * Exposes the Sunmi T1's internal thermal printer through Android's system
@@ -57,11 +60,16 @@ class SunmiPrintService : PrintService() {
             return
         }
 
+        val paperWidthMm = runBlocking {
+            PreferencesManager(applicationContext).printerPaperWidthMm.first()
+        }
+        val printerWidthPx = if (paperWidthMm == 80) PRINTER_WIDTH_PX_80MM else PRINTER_WIDTH_PX_58MM
+
         val rendered = runCatching {
             PdfRenderer(pfd).use { renderer ->
                 for (pageIndex in 0 until renderer.pageCount) {
                     renderer.openPage(pageIndex).use { page ->
-                        val bitmap = renderPageForThermalPrint(page)
+                        val bitmap = renderPageForThermalPrint(page, printerWidthPx)
                         printerConnection.printReceipt(bitmap)
                         bitmap.recycle()
                     }
@@ -77,18 +85,17 @@ class SunmiPrintService : PrintService() {
      * onto an opaque white background — thermal heads only print black/white,
      * so any transparency in the source PDF would otherwise come out solid black.
      */
-    private fun renderPageForThermalPrint(page: PdfRenderer.Page): Bitmap {
-        val scale = PRINTER_WIDTH_PX.toFloat() / page.width
+    private fun renderPageForThermalPrint(page: PdfRenderer.Page, widthPx: Int): Bitmap {
+        val scale = widthPx.toFloat() / page.width
         val height = (page.height * scale).toInt().coerceAtLeast(1)
-        val bitmap = Bitmap.createBitmap(PRINTER_WIDTH_PX, height, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(widthPx, height, Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(Color.WHITE)
         page.render(bitmap, null, Matrix().apply { setScale(scale, scale) }, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
         return bitmap
     }
 
     companion object {
-        // 58mm thermal paper renders at 384 dots wide on the T1's print head;
-        // change to 576 if targeting an 80mm-paper Sunmi variant instead.
-        private const val PRINTER_WIDTH_PX = 384
+        private const val PRINTER_WIDTH_PX_58MM = 384
+        private const val PRINTER_WIDTH_PX_80MM = 576
     }
 }

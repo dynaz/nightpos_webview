@@ -1,6 +1,9 @@
 package com.nightpos.app.ui.screens.settings
 
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.net.Uri
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatDelegate
@@ -54,16 +57,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.InstallMobile
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import com.nightpos.app.BuildConfig
 import com.nightpos.app.R
+import com.nightpos.app.print.SunmiPrinterConnection
 import com.nightpos.app.ui.theme.ErrorRed
 import com.nightpos.app.ui.theme.NeonPurple
 import com.nightpos.app.ui.theme.TextSecondary
@@ -72,6 +78,9 @@ import com.nightpos.app.util.TwaLaunchLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,6 +167,16 @@ fun SettingsScreen(
                     description = stringResource(R.string.settings_keep_screen_on_desc),
                     checked = uiState.keepScreenOnEnabled,
                     onCheckedChange = viewModel::setKeepScreenOnEnabled,
+                )
+            }
+
+            item { SectionHeader(stringResource(R.string.settings_section_printer)) }
+
+            item {
+                PrinterSection(
+                    paperWidthMm = uiState.printerPaperWidthMm,
+                    onPaperWidthChange = viewModel::setPrinterPaperWidthMm,
+                    snackbarHostState = snackbarHostState,
                 )
             }
 
@@ -515,6 +534,144 @@ private fun PwaInstallRow(serverUrl: String) {
             },
         )
     }
+}
+
+@Composable
+private fun PrinterSection(
+    paperWidthMm: Int,
+    onPaperWidthChange: (Int) -> Unit,
+    snackbarHostState: SnackbarHostState,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var isPrinting by remember { mutableStateOf(false) }
+    val testSuccessMsg = stringResource(R.string.settings_printer_test_success)
+    val testFailedMsg = stringResource(R.string.settings_printer_test_failed)
+
+    SettingsCard {
+        Text(
+            text = stringResource(R.string.settings_printer_paper_width),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = stringResource(R.string.settings_printer_paper_width_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextSecondary,
+            modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(
+                selected = paperWidthMm == 58,
+                onClick = { onPaperWidthChange(58) },
+                colors = RadioButtonDefaults.colors(selectedColor = NeonPurple),
+            )
+            Text(
+                text = stringResource(R.string.settings_printer_paper_58mm),
+                modifier = Modifier.clickable { onPaperWidthChange(58) },
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.width(24.dp))
+            RadioButton(
+                selected = paperWidthMm == 80,
+                onClick = { onPaperWidthChange(80) },
+                colors = RadioButtonDefaults.colors(selectedColor = NeonPurple),
+            )
+            Text(
+                text = stringResource(R.string.settings_printer_paper_80mm),
+                modifier = Modifier.clickable { onPaperWidthChange(80) },
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outline)
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = !isPrinting) {
+                    isPrinting = true
+                    scope.launch {
+                        val widthPx = if (paperWidthMm == 80) 576 else 384
+                        val success = withContext(Dispatchers.IO) {
+                            sunmiTestPrint(context, widthPx)
+                        }
+                        isPrinting = false
+                        snackbarHostState.showSnackbar(if (success) testSuccessMsg else testFailedMsg)
+                    }
+                },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (isPrinting) stringResource(R.string.settings_printer_printing)
+                    else stringResource(R.string.settings_printer_test),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (isPrinting) TextSecondary else MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(R.string.settings_printer_test_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Icon(
+                imageVector = Icons.Filled.Print,
+                contentDescription = null,
+                tint = if (isPrinting) TextSecondary else NeonPurple,
+            )
+        }
+    }
+}
+
+private fun sunmiTestPrint(context: android.content.Context, widthPx: Int): Boolean {
+    val connection = SunmiPrinterConnection(context)
+    if (!connection.bind()) return false
+    if (!connection.awaitReady()) {
+        connection.unbind()
+        return false
+    }
+    val bitmap = buildTestBitmap(widthPx)
+    val success = connection.printReceipt(bitmap)
+    bitmap.recycle()
+    connection.unbind()
+    return success
+}
+
+private fun buildTestBitmap(widthPx: Int): Bitmap {
+    val height = 320
+    val bitmap = Bitmap.createBitmap(widthPx, height, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    canvas.drawColor(Color.WHITE)
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.BLACK
+        textAlign = Paint.Align.CENTER
+    }
+    val cx = widthPx / 2f
+
+    paint.textSize = 40f
+    canvas.drawText("Test Print", cx, 60f, paint)
+
+    paint.textSize = 28f
+    canvas.drawText("NightPOS Soho", cx, 100f, paint)
+
+    paint.strokeWidth = 2f
+    canvas.drawLine(20f, 118f, (widthPx - 20).toFloat(), 118f, paint)
+
+    paint.textSize = 24f
+    val dateStr = SimpleDateFormat("yyyy-MM-dd  HH:mm:ss", Locale.US).format(Date())
+    canvas.drawText(dateStr, cx, 154f, paint)
+
+    val widthLabel = if (widthPx >= 576) "80 mm  (576 px)" else "58 mm  (384 px)"
+    canvas.drawText(widthLabel, cx, 190f, paint)
+
+    canvas.drawText("Sunmi T1  —  Printer OK", cx, 230f, paint)
+
+    canvas.drawLine(20f, 250f, (widthPx - 20).toFloat(), 250f, paint)
+
+    return bitmap
 }
 
 @Composable
