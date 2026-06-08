@@ -43,13 +43,18 @@ class NightPOSApplication : Application() {
             Log.i("NightPOS", "PrintHttpServer started on port ${PrintHttpServer.PORT}")
         }.onFailure { Log.e("NightPOS", "PrintHttpServer failed to start: ${it.message}") }
 
+        // Wipe the GeckoView extension startup cache so updated content.js /
+        // pos-configs.js are always loaded fresh from assets rather than a
+        // stale lz4-compressed cache that survives APK upgrades.
+        clearGeckoStartupCache()
+
         val configFile = writeGeckoConfig()
         geckoRuntime = GeckoRuntime.create(
             this,
             GeckoRuntimeSettings.Builder()
                 .javaScriptEnabled(true)
                 .remoteDebuggingEnabled(false)
-                .consoleOutput(false)
+                .consoleOutput(true)
                 .configFilePath(configFile.absolutePath)
                 .build(),
         )
@@ -72,6 +77,28 @@ class NightPOSApplication : Application() {
         val pid = Process.myPid()
         val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         return am.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName == packageName
+    }
+
+    private fun clearGeckoStartupCache() {
+        // GeckoView caches web-extension bytecode in startupCache/webext.sc.lz4.
+        // If we update content.js but this cache is stale, the old script runs.
+        // Only wipe the cache when the extension manifest version actually changed
+        // so we don't slow down every startup by forcing Gecko to rebuild it.
+        runCatching {
+            val prefs = getSharedPreferences("nightpos_ext", MODE_PRIVATE)
+            val storedVersion = prefs.getString("ext_version", null)
+            val currentVersion = assets.open("extensions/polyfill/manifest.json")
+                .bufferedReader().readText()
+                .let { Regex(""""version"\s*:\s*"([^"]+)"""").find(it)?.groupValues?.get(1) }
+
+            if (storedVersion != currentVersion) {
+                File(filesDir, "mozilla").walkTopDown()
+                    .filter { it.isDirectory && it.name == "startupCache" }
+                    .forEach { it.deleteRecursively() }
+                Log.i("NightPOS", "GeckoView startupCache cleared ($storedVersion → $currentVersion)")
+                if (currentVersion != null) prefs.edit().putString("ext_version", currentVersion).apply()
+            }
+        }.onFailure { Log.w("NightPOS", "clearGeckoStartupCache: ${it.message}") }
     }
 
     private fun writeGeckoConfig(): File {

@@ -3,7 +3,9 @@
 // can display real outlet names. Runs once per top-level page load on
 // nightpos.com after the page is ready (document_end).
 (function fetchPosConfigs() {
-  fetch('/web/dataset/call_kw', {
+  // GeckoView content scripts require absolute URLs — relative paths do not
+  // resolve against the page origin inside a built-in extension context.
+  fetch(window.location.origin + '/web/dataset/call_kw', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

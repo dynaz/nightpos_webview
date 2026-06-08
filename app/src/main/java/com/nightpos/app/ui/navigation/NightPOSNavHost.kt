@@ -1,6 +1,7 @@
 package com.nightpos.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
@@ -14,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.nightpos.app.AppContainer
+import com.nightpos.app.NightPOSApplication
 import com.nightpos.app.R
 import com.nightpos.app.ui.screens.dashboard.DashboardAction
 import com.nightpos.app.ui.screens.dashboard.DashboardScreen
@@ -43,6 +45,28 @@ fun NightPOSNavHost(
         factory = appContainer.settingsViewModelFactory(),
     )
     val settingsState by settingsViewModel.uiState.collectAsState()
+
+    // ── Pre-fetch POS outlet configs on startup ───────────────────────────────
+    // Open the GeckoSession and load the server base URL as soon as we know it.
+    // pos-configs.js fires at document_end and sends outlet names (SOHO Club,
+    // AfroRoom, …) back via window.prompt("nightpos:posConfigs", …) so the
+    // "Open POS" FAB circles are populated before the user opens any WebView.
+    LaunchedEffect(settingsState.serverUrl) {
+        val session = sharedGeckoView.session ?: run {
+            android.util.Log.w("NightPOS", "prefetch: session is null, skipping")
+            return@LaunchedEffect
+        }
+        val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
+        android.util.Log.i("NightPOS", "prefetch: opening session and loading $baseUrl/npos")
+        // Ensure the prompt delegate is wired so posConfigs messages are received
+        session.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
+        if (!session.isOpen) {
+            session.open(NightPOSApplication.geckoRuntime)
+        }
+        // A lightweight page load — pos-configs.js content script will fetch
+        // /web/dataset/call_kw, parse pos.config records and emit to the bridge
+        session.loadUri("$baseUrl/npos")
+    }
 
     NavHost(navController = navController, startDestination = NightPOSDestination.Splash.route) {
 

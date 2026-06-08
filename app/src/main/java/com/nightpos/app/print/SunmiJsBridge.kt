@@ -69,6 +69,7 @@ class SunmiJsBridge(private val context: Context) {
             prompt: GeckoSession.PromptDelegate.TextPrompt,
         ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
             val msg = prompt.message ?: return GeckoResult.fromValue(prompt.dismiss())
+            android.util.Log.i("NightPOS", "onTextPrompt: msg=$msg")
             if (!msg.startsWith("nightpos:")) return GeckoResult.fromValue(prompt.dismiss())
 
             val handlerName = msg.removePrefix("nightpos:")
@@ -80,10 +81,12 @@ class SunmiJsBridge(private val context: Context) {
                     "posConfigs" -> {
                         // Persist the POS config list fetched by pos-configs.js
                         val array = JSONArray(argsJson)
-                        _posConfigs.value = (0 until array.length()).map { i ->
+                        val configs = (0 until array.length()).map { i ->
                             val obj = array.getJSONObject(i)
                             PosConfig(id = obj.getInt("id"), name = obj.getString("name"))
                         }
+                        android.util.Log.i("NightPOS", "posConfigs received: $configs")
+                        _posConfigs.value = configs
                         "ok"
                     }
                     else -> JSONObject().put("success", false).put("error", "Unknown: $handlerName").toString()

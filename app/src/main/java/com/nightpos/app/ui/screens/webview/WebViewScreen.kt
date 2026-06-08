@@ -101,7 +101,10 @@ fun WebViewScreen(
         onDispose {
             session?.navigationDelegate = null
             session?.progressDelegate = null
-            session?.promptDelegate = null
+            // Keep the prompt delegate alive so pos-configs.js can still report
+            // outlet names even after leaving the WebView screen (the singleton
+            // bridge never changes, so re-assigning is safe and always correct).
+            session?.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
         }
     }
 
