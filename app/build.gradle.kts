@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.androidx.material)
     implementation(libs.androidbrowserhelper)
     implementation(libs.androidx.appcompat)
+    implementation(libs.sunmi.printerlibrary)
 
     debugImplementation(libs.androidx.ui.tooling)
 }

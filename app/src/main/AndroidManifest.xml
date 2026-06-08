@@ -95,6 +95,22 @@
                 android:value="true" />
         </service>
 
+        <!-- Exposes the Sunmi T1's internal thermal printer as a system
+             printer (Settings → Printing) so receipts can be printed via the
+             standard Android print dialog from any app, including external
+             browsers such as Firefox that Odoo destinations now open in. -->
+        <service
+            android:name=".print.SunmiPrintService"
+            android:exported="true"
+            android:permission="android.permission.BIND_PRINT_SERVICE">
+            <intent-filter>
+                <action android:name="android.printservice.PrintService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.printservice"
+                android:resource="@xml/sunmi_print_service" />
+        </service>
+
         <!-- FileProvider for WebView file uploads / downloads -->
         <provider
             android:name="androidx.core.content.FileProvider"
