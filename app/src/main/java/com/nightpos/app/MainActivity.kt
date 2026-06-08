@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.nightpos.app.print.SunmiJsBridge
 import com.nightpos.app.ui.navigation.NightPOSNavHost
 import com.nightpos.app.ui.screens.settings.SettingsUiState
 import com.nightpos.app.ui.theme.NightPOSTheme
@@ -26,7 +25,6 @@ import org.mozilla.geckoview.GeckoView
 class MainActivity : ComponentActivity() {
 
     private lateinit var appContainer: AppContainer
-    private var sunmiJsBridge: SunmiJsBridge? = null
     private var geckoSession: GeckoSession? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,18 +38,16 @@ class MainActivity : ComponentActivity() {
             NightPOSTheme {
                 val context = LocalContext.current
 
-                // One GeckoView + one GeckoSession shared across all screens so the
-                // Odoo SPA session survives navigation between Dashboard tabs.
+                // One GeckoView + one GeckoSession shared across all screens.
+                // The session is opened lazily inside WebViewScreen so that content
+                // processes are not spawned until GeckoView is actually shown.
+                // (On Sunmi T1 / kernel 3.10, the POS opens in Firefox Custom Tabs
+                // and GeckoView is never used, avoiding the SELinux IPC crash loop.)
                 val sharedGeckoView = remember {
                     GeckoView(context).also { view ->
                         val session = GeckoSessionFactory.create()
-                        val bridge = SunmiJsBridge(context)
-                        bridge.bindPrinter()
-                        session.promptDelegate = bridge.geckoPromptDelegate
-                        session.open(NightPOSApplication.geckoRuntime)
                         view.setSession(session)
                         geckoSession = session
-                        sunmiJsBridge = bridge
                     }
                 }
 
@@ -97,8 +93,6 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        sunmiJsBridge?.unbindPrinter()
-        sunmiJsBridge = null
         geckoSession?.close()
         geckoSession = null
         super.onDestroy()

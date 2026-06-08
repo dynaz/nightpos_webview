@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.nightpos.app.NightPOSApplication
 import com.nightpos.app.R
 import com.nightpos.app.ui.navigation.WebViewKind
 import com.nightpos.app.ui.screens.offline.OfflineScreen
@@ -102,12 +103,17 @@ fun WebViewScreen(
         }
     }
 
+    // Open the session lazily the first time this screen is shown — avoids spawning
+    // GeckoView content processes until GeckoView is actually needed.
+    LaunchedEffect(session) {
+        if (session != null && !session.isOpen) {
+            session.open(NightPOSApplication.geckoRuntime)
+        }
+    }
+
     // Load URL when it changes (skip if already on this URL)
     LaunchedEffect(url) {
-        val current = runCatching {
-            // GeckoSession doesn't expose currentUrl directly; use a flag in ViewModel
-            uiState.currentUrl
-        }.getOrNull()
+        val current = uiState.currentUrl
         if (current?.substringBefore('#') != url.substringBefore('#')) {
             session?.loadUri(url)
             viewModel.setCurrentUrl(url)

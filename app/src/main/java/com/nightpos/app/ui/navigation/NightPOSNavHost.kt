@@ -73,9 +73,10 @@ fun NightPOSNavHost(
                 onAction = { action ->
                     when (action) {
                         DashboardAction.OpenNposHome -> launchTwa(Constants.nposHomeUrl(baseUrl))
-                        DashboardAction.OpenPos -> navController.navigate(
-                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.POS)
-                        )
+                        // Open POS in Firefox Custom Tabs — GeckoView content processes
+                        // crash on Sunmi T1 (kernel 3.10 / SELinux blocks IPC ioctl).
+                        // Printing is handled by PrintHttpServer on localhost:8585.
+                        DashboardAction.OpenPos -> launchTwa(Constants.openPosUrl(baseUrl))
                         DashboardAction.OpenReports -> launchTwa(Constants.reportsUrl(baseUrl))
                         DashboardAction.OpenCustomers -> launchTwa(Constants.customersUrl(baseUrl))
                         DashboardAction.OpenProducts -> launchTwa(Constants.productsUrl(baseUrl))
