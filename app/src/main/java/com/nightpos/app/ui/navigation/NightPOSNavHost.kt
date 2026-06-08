@@ -70,17 +70,28 @@ fun NightPOSNavHost(
             DashboardScreen(
                 viewModel = dashboardViewModel,
                 sharedGeckoView = sharedGeckoView,
+                baseUrl = baseUrl,
                 onAction = { action ->
                     when (action) {
                         DashboardAction.OpenNposHome -> launchTwa(Constants.nposHomeUrl(baseUrl))
                         DashboardAction.OpenPos -> navController.navigate(
                             NightPOSDestination.WebViewDest.routeFor(WebViewKind.POS)
                         )
-                        DashboardAction.OpenReports -> launchTwa(Constants.reportsUrl(baseUrl))
-                        DashboardAction.OpenCustomers -> launchTwa(Constants.customersUrl(baseUrl))
-                        DashboardAction.OpenProducts -> launchTwa(Constants.productsUrl(baseUrl))
-                        DashboardAction.OpenDiscountLoyalty -> launchTwa(Constants.discountLoyaltyUrl(baseUrl))
-                        DashboardAction.OpenGiftCards -> launchTwa(Constants.giftCardsUrl(baseUrl))
+                        DashboardAction.OpenReports -> navController.navigate(
+                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.REPORTS)
+                        )
+                        DashboardAction.OpenCustomers -> navController.navigate(
+                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.CUSTOMERS)
+                        )
+                        DashboardAction.OpenProducts -> navController.navigate(
+                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.PRODUCTS)
+                        )
+                        DashboardAction.OpenDiscountLoyalty -> navController.navigate(
+                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.DISCOUNT_LOYALTY)
+                        )
+                        DashboardAction.OpenGiftCards -> navController.navigate(
+                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.GIFT_CARDS)
+                        )
                         DashboardAction.OpenEmployees -> navController.navigate(
                             NightPOSDestination.WebViewDest.routeFor(WebViewKind.EMPLOYEES)
                         )
@@ -89,6 +100,9 @@ fun NightPOSNavHost(
                         )
                         DashboardAction.OpenSettings -> navController.navigate(NightPOSDestination.Settings.route)
                         DashboardAction.Logout -> Unit
+                        is DashboardAction.OpenPosOutlet -> navController.navigate(
+                            NightPOSDestination.OutletDest.routeFor(action.url, action.name)
+                        )
                     }
                 },
                 onLoggedOut = {
@@ -113,6 +127,9 @@ fun NightPOSNavHost(
                 WebViewKind.POS -> stringResource(R.string.menu_open_pos)
                 WebViewKind.REPORTS -> stringResource(R.string.menu_reports)
                 WebViewKind.CUSTOMERS -> stringResource(R.string.menu_customers)
+                WebViewKind.PRODUCTS -> stringResource(R.string.menu_products)
+                WebViewKind.DISCOUNT_LOYALTY -> stringResource(R.string.menu_discount_loyalty)
+                WebViewKind.GIFT_CARDS -> stringResource(R.string.menu_gift_cards)
                 WebViewKind.EMPLOYEES -> stringResource(R.string.menu_employees)
                 WebViewKind.PRINTERS -> stringResource(R.string.menu_printers)
             }
@@ -121,6 +138,9 @@ fun NightPOSNavHost(
                 WebViewKind.POS -> Constants.openPosUrl(baseUrl)
                 WebViewKind.REPORTS -> Constants.reportsUrl(baseUrl)
                 WebViewKind.CUSTOMERS -> Constants.customersUrl(baseUrl)
+                WebViewKind.PRODUCTS -> Constants.productsUrl(baseUrl)
+                WebViewKind.DISCOUNT_LOYALTY -> Constants.discountLoyaltyUrl(baseUrl)
+                WebViewKind.GIFT_CARDS -> Constants.giftCardsUrl(baseUrl)
                 WebViewKind.EMPLOYEES -> Constants.employeesUrl(baseUrl)
                 WebViewKind.PRINTERS -> Constants.printersUrl(baseUrl)
             }
@@ -133,6 +153,38 @@ fun NightPOSNavHost(
                 viewModel = webViewViewModel,
                 isOnline = isOnline,
                 kioskModeEnabled = settingsState.kioskModeEnabled && kind == WebViewKind.POS,
+                keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
+                onExit = {
+                    navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                },
+            )
+        }
+
+        // Outlet WebView — custom URL passed directly (e.g. specific POS outlet)
+        composable(
+            route = NightPOSDestination.OutletDest.ROUTE_PATTERN,
+            arguments = listOf(
+                navArgument(NightPOSDestination.OutletDest.ARG_URL) { type = NavType.StringType },
+                navArgument(NightPOSDestination.OutletDest.ARG_TITLE) {
+                    type = NavType.StringType
+                    defaultValue = "POS"
+                },
+            ),
+        ) { backStackEntry ->
+            val outletUrl = backStackEntry.arguments?.getString(NightPOSDestination.OutletDest.ARG_URL) ?: ""
+            val outletTitle = backStackEntry.arguments?.getString(NightPOSDestination.OutletDest.ARG_TITLE) ?: "POS"
+            val outletViewModel: WebViewViewModel = viewModel(
+                key = "outlet-${outletUrl.hashCode()}",
+                factory = appContainer.webViewViewModelFactory(),
+            )
+            WebViewScreen(
+                kind = WebViewKind.POS,
+                title = outletTitle,
+                url = outletUrl,
+                geckoView = sharedGeckoView,
+                viewModel = outletViewModel,
+                isOnline = isOnline,
+                kioskModeEnabled = false,
                 keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
                 onExit = {
                     navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)

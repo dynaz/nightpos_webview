@@ -3,9 +3,13 @@ package com.nightpos.app.print
 import android.content.Context
 import android.util.Base64
 import android.webkit.JavascriptInterface
+import org.json.JSONArray
 import org.json.JSONObject
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Dual-mode JS bridge for the Sunmi printer:
@@ -22,10 +26,16 @@ import org.mozilla.geckoview.GeckoSession
  * existing `nightpos_printer` Odoo addon (which uses
  * `window.flutter_inappwebview.callHandler(...)`) works unmodified.
  */
+/** A single active POS configuration fetched from Odoo's pos.config model. */
+data class PosConfig(val id: Int, val name: String)
+
 class SunmiJsBridge(private val context: Context) {
 
     private val connection = SunmiPrinterConnection(context)
     @Volatile private var bound = false
+
+    private val _posConfigs = MutableStateFlow<List<PosConfig>>(emptyList())
+    val posConfigs: StateFlow<List<PosConfig>> = _posConfigs.asStateFlow()
 
     fun bindPrinter() {
         if (!bound) bound = connection.bind()
@@ -67,6 +77,15 @@ class SunmiJsBridge(private val context: Context) {
                 when (handlerName) {
                     "ping" -> "pong"
                     "SunmiPrinter" -> handleSunmi(JSONObject(argsJson))
+                    "posConfigs" -> {
+                        // Persist the POS config list fetched by pos-configs.js
+                        val array = JSONArray(argsJson)
+                        _posConfigs.value = (0 until array.length()).map { i ->
+                            val obj = array.getJSONObject(i)
+                            PosConfig(id = obj.getInt("id"), name = obj.getString("name"))
+                        }
+                        "ok"
+                    }
                     else -> JSONObject().put("success", false).put("error", "Unknown: $handlerName").toString()
                 }
             }.getOrElse { e ->

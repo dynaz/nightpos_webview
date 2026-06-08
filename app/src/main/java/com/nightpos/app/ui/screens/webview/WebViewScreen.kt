@@ -97,9 +97,11 @@ fun WebViewScreen(
     DisposableEffect(session, navigationDelegate, progressDelegate) {
         session?.navigationDelegate = navigationDelegate
         session?.progressDelegate = progressDelegate
+        session?.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
         onDispose {
             session?.navigationDelegate = null
             session?.progressDelegate = null
+            session?.promptDelegate = null
         }
     }
 

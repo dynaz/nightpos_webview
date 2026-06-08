@@ -7,6 +7,7 @@ import android.os.Process
 import android.util.Log
 import com.nightpos.app.print.PrintHttpServer
 import com.nightpos.app.print.PrintServiceEnabler
+import com.nightpos.app.print.SunmiJsBridge
 import com.nightpos.app.print.SunmiPrinterConnection
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
@@ -21,6 +22,8 @@ class NightPOSApplication : Application() {
             private set
         lateinit var printerConnection: SunmiPrinterConnection
             private set
+        lateinit var jsBridge: SunmiJsBridge
+            private set
     }
 
     override fun onCreate() {
@@ -33,6 +36,7 @@ class NightPOSApplication : Application() {
         PrintServiceEnabler.ensureEnabled(this)
 
         printerConnection = SunmiPrinterConnection(this).also { it.bind() }
+        jsBridge = SunmiJsBridge(this).also { it.bindPrinter() }
 
         runCatching {
             PrintHttpServer(printerConnection).start()

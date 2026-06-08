@@ -20,7 +20,9 @@ class AppContainer(context: Context) {
     val connectivityObserver: NetworkConnectivityObserver by lazy { NetworkConnectivityObserver(appContext) }
 
     fun dashboardViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
-        initializer { DashboardViewModel(sessionManager) }
+        // Use the singleton jsBridge from Application so the posConfigs StateFlow
+        // is the same instance that the GeckoView prompt delegate writes to.
+        initializer { DashboardViewModel(sessionManager, NightPOSApplication.jsBridge.posConfigs) }
     }
 
     fun settingsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
