@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ── List View ──────────────────────────────────────────────────── -->
+    <record id="nightpos_printer_list" model="ir.ui.view">
+        <field name="name">nightpos.printer.list</field>
+        <field name="model">nightpos.printer</field>
+        <field name="arch" type="xml">
+            <list string="Printers" editable="bottom"
+                  decoration-primary="is_default"
+                  decoration-muted="not active">
+                <field name="sequence" widget="handle"/>
+                <field name="name" string="ชื่อพริ้นเตอร์"/>
+                <field name="printer_type" string="Printer Type"/>
+                <field name="ip" string="IP Address" optional="show"
+                       invisible="printer_type == 'sunmi'"
+                       required="printer_type == 'tcp'"/>
+                <field name="port" string="Port" optional="show"
+                       invisible="printer_type == 'sunmi'"
+                       required="printer_type == 'tcp'"/>
+                <field name="chrome_printer_name" string="Local printer" optional="hide"/>
+                <field name="is_default" string="Default" widget="boolean_toggle"/>
+                <field name="active" string="Active" widget="boolean_toggle"/>
+                <field name="note" string="หมายเหตุ" optional="show"/>
+                <button name="action_test_print_odoo"
+                        type="object"
+                        string="IoT"
+                        icon="fa-globe"
+                        title="Test Print — Browser / IoT Box"
+                        class="btn-link"/>
+                <button name="action_test_print_auto"
+                        type="object"
+                        string="Auto"
+                        icon="fa-magic"
+                        title="Test Print — Auto (per device)"
+                        class="btn-link"/>
+                <button name="action_test_print_tcp"
+                        type="object"
+                        string="TCP"
+                        icon="fa-print"
+                        title="Test Print — TCP/IP (Server)"
+                        class="btn-link"/>
+                <button name="action_test_print_sunmi"
+                        type="object"
+                        string="Sunmi"
+                        icon="fa-mobile"
+                        title="Test Print — Sunmi built-in (NightPOS App)"
+                        class="btn-link"/>
+                <button name="action_test_print_chrome"
+                        type="object"
+                        string="Chrome"
+                        icon="fa-print"
+                        title="Test Print — Chrome Extension (Local)"
+                        class="btn-link"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ── Form View ──────────────────────────────────────────────────── -->
+    <record id="nightpos_printer_form" model="ir.ui.view">
+        <field name="name">nightpos.printer.form</field>
+        <field name="model">nightpos.printer</field>
+        <field name="arch" type="xml">
+            <form string="Printer">
+                <header>
+                    <button name="action_test_print"
+                            string="Test Print"
+                            type="object"
+                            class="btn-primary"
+                            title="Test using the selected Printer Type"/>
+                    <button name="action_test_print_odoo"
+                            string="Test (Browser / IoT)"
+                            type="object"
+                            class="btn-secondary"/>
+                    <button name="action_test_print_tcp"
+                            string="Test (TCP)"
+                            type="object"
+                            class="btn-secondary"/>
+                    <button name="action_test_print_sunmi"
+                            string="Test (Sunmi)"
+                            type="object"
+                            class="btn-secondary"/>
+                    <button name="action_test_print_chrome"
+                            string="Test (Chrome)"
+                            type="object"
+                            class="btn-secondary"/>
+                    <button name="action_set_default"
+                            string="ตั้งเป็น Default"
+                            type="object"
+                            invisible="is_default"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon"
+                            title="Default"
+                            invisible="not is_default"/>
+                    <div class="oe_title">
+                        <label for="name" string="ชื่อพริ้นเตอร์"/>
+                        <h1>
+                            <field name="name"
+                                   placeholder="เช่น เครื่องแคชเชียร์ 1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Printer Type">
+                            <field name="printer_type" widget="radio"/>
+                            <field name="chrome_printer_name"
+                                   widget="nightpos_chrome_printer"
+                                   invisible="printer_type != 'chrome_extension'"
+                                   placeholder="Refresh to load Windows printers"/>
+                        </group>
+                        <group string="Sunmi built-in"
+                               invisible="printer_type != 'sunmi'">
+                            <div class="text-muted" colspan="2">
+                                Uses the built-in printer on the NightPOS Android app.
+                                No IP address is required.
+                            </div>
+                        </group>
+                        <group string="การเชื่อมต่อ TCP"
+                               invisible="printer_type == 'sunmi'">
+                            <field name="ip"
+                                   string="IP Address"
+                                   placeholder="192.168.1.100"
+                                   required="printer_type == 'tcp'"/>
+                            <field name="port" string="Port"
+                                   required="printer_type == 'tcp'"/>
+                            <field name="is_default" string="Default Printer"/>
+                        </group>
+                        <group invisible="printer_type != 'sunmi'">
+                            <field name="is_default" string="Default Printer"/>
+                        </group>
+                        <group string="ทั่วไป">
+                            <field name="sequence"/>
+                            <field name="active" widget="boolean_toggle"/>
+                            <field name="note" string="หมายเหตุ"
+                                   placeholder="ระบุตำแหน่ง/รายละเอียด"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Search View ────────────────────────────────────────────────── -->
+    <record id="nightpos_printer_search" model="ir.ui.view">
+        <field name="name">nightpos.printer.search</field>
+        <field name="model">nightpos.printer</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาพริ้นเตอร์">
+                <field name="name"/>
+                <field name="ip"/>
+                <field name="printer_type"/>
+                <filter name="default"  string="Default"   domain="[('is_default','=',True)]"/>
+                <filter name="active"   string="Active"    domain="[('active','=',True)]"/>
+                <filter name="inactive" string="Archived"  domain="[('active','=',False)]"/>
+                <separator/>
+                <filter name="type_tcp" string="TCP/IP"
+                        domain="[('printer_type','=','tcp')]"/>
+                <filter name="type_chrome" string="Chrome Extension"
+                        domain="[('printer_type','=','chrome_extension')]"/>
+                <group name="group_by">
+                    <filter name="group_type" string="Printer Type"
+                            domain="[]" context="{'group_by': 'printer_type'}"/>
+                    <filter name="group_default" string="Default"
+                            domain="[]" context="{'group_by': 'is_default'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ── Window Action ──────────────────────────────────────────────── -->
+    <record id="action_nightpos_printer" model="ir.actions.act_window">
+        <field name="name">พริ้นเตอร์</field>
+        <field name="res_model">nightpos.printer</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="nightpos_printer_search"/>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                เพิ่มพริ้นเตอร์ตัวแรก
+            </p>
+            <p>
+                เลือก <strong>Printer Type</strong> แล้วใช้ปุ่ม <strong>Test</strong> ในแต่ละคอลัมน์
+                เพื่อทดสอบ Browser, Auto, TCP, Sunmi หรือ Chrome Extension
+            </p>
+        </field>
+    </record>
+
+</odoo>

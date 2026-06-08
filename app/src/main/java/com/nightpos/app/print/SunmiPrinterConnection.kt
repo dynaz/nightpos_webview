@@ -64,6 +64,12 @@ class SunmiPrinterConnection(private val context: Context) {
         }.isSuccess
     }
 
+    /** Sends raw ESC/POS bytes directly — used by the JS bridge for Odoo POS printing. */
+    fun sendRaw(bytes: ByteArray): Boolean {
+        val svc = service ?: return false
+        return runCatching { svc.sendRAWData(bytes, null) }.isSuccess
+    }
+
     companion object {
         private const val CONNECT_TIMEOUT_MS = 5_000L
         private const val POLL_INTERVAL_MS = 50L

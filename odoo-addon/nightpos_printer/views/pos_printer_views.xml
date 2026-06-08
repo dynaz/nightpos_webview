@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Redirect legacy action to nightpos.printer list (if opened from code) -->
+    <record id="point_of_sale.action_pos_printer_form" model="ir.actions.act_window">
+        <field name="name">Printers</field>
+        <field name="res_model">nightpos.printer</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="nightpos_printer_list"/>
+        <field name="search_view_id" ref="nightpos_printer_search"/>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('nightpos_printer_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('nightpos_printer_form')}),
+        ]"/>
+    </record>
+
+    <!-- Hide POS app menu — use NightPOS Printer app instead -->
+    <record id="point_of_sale.menu_pos_preparation_printer" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+
+    <record id="point_of_sale.view_pos_printer" model="ir.ui.view">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="point_of_sale.view_pos_printer_form" model="ir.ui.view">
+        <field name="active" eval="False"/>
+    </record>
+
+</odoo>

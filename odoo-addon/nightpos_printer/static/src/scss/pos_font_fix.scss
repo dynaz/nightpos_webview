@@ -1,0 +1,6 @@
+// Inconsolata.otf is omitted from some Odoo packages; avoid 404 and use system monospace.
+@font-face {
+    font-family: 'Inconsolata';
+    src: local('Inconsolata'), local('DejaVu Sans Mono'), local('Courier New'), monospace;
+    font-display: swap;
+}

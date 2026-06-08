@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pos_nightpos_config_view_form" model="ir.ui.view">
+        <field name="name">pos.config.form.inherit.nightpos.printer</field>
+        <field name="model">pos.config</field>
+        <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+        <field name="priority" eval="200"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//setting[@id='other_devices']" position="replace">
+                <setting id="other_devices"
+                         string="Receipt Printer (NightPOS)"
+                         help="Choose Sunmi built-in, TCP/ESC-POS, Chrome extension, or standard browser/IoT printing">
+                    <field name="other_devices" invisible="1"/>
+                    <field name="nightpos_receipt_device_policy" widget="radio" class="mt-2"/>
+                    <div class="alert alert-warning py-2 mb-2" role="alert"
+                         invisible="nightpos_receipt_device_policy != 'per_device'">
+                        Shop receipt mode below is ignored. Each device sets its printer on the
+                        POS login screen (<strong>This device: …</strong>) or in
+                        NightPOS Printer → Device print profiles.
+                    </div>
+                    <field name="nightpos_receipt_mode"
+                           widget="radio"
+                           invisible="nightpos_receipt_device_policy == 'per_device'"/>
+                    <div class="content-group mt-2"
+                         invisible="nightpos_receipt_device_policy != 'per_device'">
+                        <p class="text-muted mb-0">
+                            Each tablet or PC keeps its own print mode and local printer name in the database
+                            (device key stays in the browser). View profiles under
+                            <strong>NightPOS Printer → Configuration → Device print profiles</strong>.
+                        </p>
+                    </div>
+                    <div class="content-group mt-2">
+                        <field name="nightpos_receipt_printer_id"
+                               placeholder="Receipt printer"
+                               options="{'no_create': True}"/>
+                        <div class="mt-2"
+                             invisible="nightpos_receipt_mode not in ('chrome_extension', 'auto')">
+                            <label for="nightpos_chrome_printer_name"
+                                   string="Windows / local printer"
+                                   class="o_form_label"/>
+                            <field name="nightpos_chrome_printer_name"
+                                   widget="nightpos_chrome_printer"
+                                   placeholder="Refresh to load printers from this PC"/>
+                        </div>
+                        <div class="row" invisible="nightpos_receipt_printer_id in [False, '']">
+                            <label string="Cashdrawer" for="iface_cashdrawer" class="col-lg-3 o_light_label"/>
+                            <field name="iface_cashdrawer"/>
+                        </div>
+                        <div class="mt-3">
+                            <div class="o_form_label d-block mb-1">Test print</div>
+                            <div class="d-flex flex-wrap column-gap-3 row-gap-1">
+                                <button name="action_test_nightpos_receipt_printer"
+                                        type="object"
+                                        string="Shop mode"
+                                        class="btn-link px-0"
+                                        icon="fa-print"
+                                        title="Test using the shop receipt mode above"/>
+                                <button name="action_test_nightpos_receipt_print_odoo"
+                                        type="object"
+                                        string="Browser / IoT"
+                                        class="btn-link px-0"
+                                        icon="fa-print"/>
+                                <button name="action_test_nightpos_receipt_print_auto"
+                                        type="object"
+                                        string="Auto"
+                                        class="btn-link px-0"
+                                        icon="fa-print"/>
+                                <button name="action_test_nightpos_receipt_print_tcp"
+                                        type="object"
+                                        string="TCP"
+                                        class="btn-link px-0"
+                                        icon="fa-print"/>
+                                <button name="action_test_nightpos_receipt_print_sunmi"
+                                        type="object"
+                                        string="Sunmi"
+                                        class="btn-link px-0"
+                                        icon="fa-print"/>
+                                <button name="action_test_nightpos_receipt_print_chrome"
+                                        type="object"
+                                        string="Chrome"
+                                        class="btn-link px-0"
+                                        icon="fa-print"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="alert" class="alert alert-info" invisible="nightpos_receipt_mode != 'sunmi'">
+                        Sunmi built-in printer is used inside the NightPOS Android app.
+                    </div>
+                    <div role="alert" class="alert alert-info"
+                         invisible="nightpos_receipt_mode != 'chrome_extension'">
+                        Receipts are sent as ESC/POS via your Chrome Extension to the local print
+                        server. Pick the <strong>Windows / local printer</strong> name above
+                        (Refresh loads printers from this PC). The NightPOS printer record is
+                        only used for ESC/POS layout, not as the Windows queue name.
+                    </div>
+                    <div role="alert" class="alert alert-info"
+                         invisible="nightpos_receipt_mode != 'auto'">
+                        Each POS device auto-selects Sunmi, TCP (NightPOS app), Chrome Extension,
+                        or browser print. With <strong>Per-device choice (saved in database)</strong>,
+                        set a mode per tablet/PC (stored on the server for this device):
+                        <code>NightPOSDevicePrint.setDeviceOverride(posId, 'tcp')</code>
+                    </div>
+                </setting>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

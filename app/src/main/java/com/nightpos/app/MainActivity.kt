@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.nightpos.app.print.SunmiJsBridge
 import com.nightpos.app.ui.navigation.NightPOSNavHost
 import com.nightpos.app.ui.screens.settings.SettingsUiState
 import com.nightpos.app.ui.theme.NightPOSTheme
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 class MainActivity : ComponentActivity() {
 
     private lateinit var appContainer: AppContainer
+    private var sunmiJsBridge: SunmiJsBridge? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Must be called before super.onCreate() / setContent.
@@ -43,7 +45,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             NightPOSTheme {
                 val context = LocalContext.current
-                val sharedWebView = remember { WebViewFactory.create(context) }
+                val sharedWebView = remember {
+                    WebViewFactory.create(context).also { wv ->
+                        val bridge = SunmiJsBridge(context)
+                        bridge.bindPrinter()
+                        wv.addJavascriptInterface(bridge, "NightPOSBridge")
+                        sunmiJsBridge = bridge
+                    }
+                }
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
 
@@ -83,5 +92,11 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onDestroy() {
+        sunmiJsBridge?.unbindPrinter()
+        sunmiJsBridge = null
+        super.onDestroy()
     }
 }

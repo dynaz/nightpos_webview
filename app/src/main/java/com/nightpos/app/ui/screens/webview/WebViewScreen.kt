@@ -151,7 +151,14 @@ fun WebViewScreen(
     val webViewClient = remember(kind) {
         PosWebViewClient(
             onPageStarted = { viewModel.onPageStarted() },
-            onPageFinished = { viewModel.onPageFinished(webView.canGoBack()) },
+            onPageFinished = { url ->
+                viewModel.onPageFinished(webView.canGoBack())
+                // Re-inject the flutter_inappwebview shim on every page load so the
+                // nightpos_printer Odoo addon's Sunmi mode can call NightPOSBridge.
+                webView.evaluateJavascript(
+                    com.nightpos.app.print.SunmiJsBridge.buildInjectionScript(), null
+                )
+            },
             onReceivedError = { code, description, failingUrl ->
                 viewModel.onPageError(code, description, failingUrl)
             },

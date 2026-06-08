@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="nightpos_printer_list_pos" model="ir.ui.view">
+        <field name="name">nightpos.printer.list.pos</field>
+        <field name="model">nightpos.printer</field>
+        <field name="inherit_id" ref="nightpos_printer_list"/>
+        <field name="arch" type="xml">
+            <field name="note" position="after">
+                <field name="product_categories_ids" widget="many2many_tags" optional="show"/>
+                <field name="pos_config_ids" widget="many2many_tags" optional="show" string="POS Shops"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="nightpos_printer_form_pos" model="ir.ui.view">
+        <field name="name">nightpos.printer.form.pos</field>
+        <field name="model">nightpos.printer</field>
+        <field name="inherit_id" ref="nightpos_printer_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='note']/parent::group" position="after">
+                <group string="Point of Sale">
+                    <field name="pos_config_ids" widget="many2many_tags"
+                           placeholder="POS shops that use this printer (kitchen / bar)"/>
+                    <field name="product_categories_ids" widget="many2many_tags"
+                           placeholder="Product categories (optional)"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
