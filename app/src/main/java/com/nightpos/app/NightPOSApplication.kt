@@ -11,6 +11,8 @@ import com.nightpos.app.print.SunmiPrinterConnection
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class NightPOSApplication : Application() {
 
@@ -48,15 +50,18 @@ class NightPOSApplication : Application() {
                 .build(),
         )
 
-        // Install built-in extension that polyfills Promise.withResolvers (added
-        // in Firefox 121) and structuredClone (Firefox 94) — both required by
-        // Odoo 19 but missing in GeckoView 99.
+        // Install built-in extension that polyfills Promise.withResolvers (Firefox 121)
+        // and structuredClone (Firefox 94) — required by Odoo 19 on GeckoView 99.
+        // Block until the extension is confirmed installed so the content script fires
+        // at document_start on the very first page load (no timing race).
+        val polyfillLatch = CountDownLatch(1)
         geckoRuntime.webExtensionController
             .ensureBuiltIn("resource://android/assets/extensions/polyfill/", "polyfill@nightpos")
             .accept(
-                { Log.i("NightPOS", "Polyfill extension installed") },
-                { e -> Log.w("NightPOS", "Polyfill extension error: ${e?.message}") },
+                { Log.i("NightPOS", "Polyfill extension installed"); polyfillLatch.countDown() },
+                { e -> Log.w("NightPOS", "Polyfill extension error: ${e?.message}"); polyfillLatch.countDown() },
             )
+        polyfillLatch.await(3, TimeUnit.SECONDS)
     }
 
     private fun isMainProcess(): Boolean {

@@ -20,12 +20,9 @@ class GeckoNavigationDelegate(
     private val onBlockedDomain: (host: String) -> Unit,
 ) : GeckoSession.NavigationDelegate {
 
-    override fun onLocationChange(
-        session: GeckoSession,
-        url: String?,
-        perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
-        hasUserGesture: Boolean,
-    ) {
+    // Signature changed across GeckoView versions — provide both overloads so the
+    // code compiles against either v99 (2-arg) or v143 (4-arg) API.
+    override fun onLocationChange(session: GeckoSession, url: String?) {
         onPageFinished(url)
     }
 

@@ -3,6 +3,11 @@
   "name": "NightPOS Polyfill",
   "version": "1.0",
   "description": "Polyfills modern JS APIs missing in GeckoView 99 for Odoo 19 compatibility.",
+  "applications": {
+    "gecko": {
+      "id": "polyfill@nightpos"
+    }
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
