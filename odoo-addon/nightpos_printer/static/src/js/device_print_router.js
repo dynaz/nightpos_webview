@@ -95,6 +95,13 @@ async function _probeAndInstallHttpBridge() {
 
 _installGeckoViewBridgeIfNeeded();
 
+// If no synchronous bridge was found, probe the HTTP server in the background.
+// The localhost round-trip is ~50 ms, so by the time the user interacts with
+// any print UI the shim will be installed and isNightposAppAvailable() returns true.
+if (!window.flutter_inappwebview && !window.NightPOSBridge) {
+    _probeAndInstallHttpBridge();
+}
+
 export function isNightposAppAvailable() {
     // flutter_inappwebview = Flutter InAppWebView OR GeckoView shim (installed above)
     // NightPOSBridge = standard Android WebView with SunmiJsBridge injected
