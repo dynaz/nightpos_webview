@@ -77,6 +77,14 @@
 
     <string name="settings_version">เวอร์ชันแอป</string>
 
+    <!-- Language -->
+    <string name="settings_language">ภาษา</string>
+    <string name="settings_language_desc">เลือกภาษาที่แสดงในแอป</string>
+    <string name="language_dialog_title">เลือกภาษา</string>
+    <string name="language_system_default">ค่าเริ่มต้นของระบบ</string>
+    <string name="language_thai">ไทย (Thai)</string>
+    <string name="language_english">English</string>
+
     <!-- PWA install -->
     <string name="pwa_install_title">ติดตั้ง NightPOS เป็น PWA</string>
     <string name="pwa_install_desc">เปิดในเบราว์เซอร์แล้วติดตั้งลงหน้าจอหลัก — ใช้งานได้แบบ full-screen โดยไม่ต้องมี Chrome</string>

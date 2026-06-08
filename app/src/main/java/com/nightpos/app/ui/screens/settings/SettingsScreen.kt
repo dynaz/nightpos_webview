@@ -3,6 +3,7 @@ package com.nightpos.app.ui.screens.settings
 import android.content.Intent
 import android.net.Uri
 import android.webkit.WebView
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -58,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.InstallMobile
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
 import com.nightpos.app.BuildConfig
 import com.nightpos.app.R
 import com.nightpos.app.ui.theme.ErrorRed
@@ -171,6 +175,8 @@ fun SettingsScreen(
                     },
                 )
             }
+
+            item { LanguageRow() }
 
             item { SectionHeader(stringResource(R.string.settings_section_about)) }
 
@@ -319,6 +325,110 @@ private fun ClearDataRow(isClearing: Boolean, onClear: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+/** Maps a BCP-47 language tag prefix to its display string resource. */
+private fun languageLabelRes(tag: String): Int = when {
+    tag.isBlank() -> R.string.language_system_default
+    tag.startsWith("th") -> R.string.language_thai
+    tag.startsWith("en") -> R.string.language_english
+    else -> R.string.language_system_default
+}
+
+@Composable
+private fun LanguageRow() {
+    var showDialog by remember { mutableStateOf(false) }
+    // setApplicationLocales recreates the Activity, so re-reading on each
+    // composition keeps this in sync with the persisted choice.
+    val currentTag = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+
+    SettingsCard {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showDialog = true },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.settings_language),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(R.string.settings_language_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = stringResource(languageLabelRes(currentTag)),
+                style = MaterialTheme.typography.bodyLarge,
+                color = NeonPurple,
+            )
+        }
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(stringResource(R.string.language_dialog_title)) },
+            text = {
+                Column {
+                    LanguageOption(
+                        label = stringResource(R.string.language_system_default),
+                        selected = currentTag.isBlank(),
+                        onClick = {
+                            AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+                            showDialog = false
+                        },
+                    )
+                    LanguageOption(
+                        label = stringResource(R.string.language_thai),
+                        selected = currentTag.startsWith("th"),
+                        onClick = {
+                            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("th"))
+                            showDialog = false
+                        },
+                    )
+                    LanguageOption(
+                        label = stringResource(R.string.language_english),
+                        selected = currentTag.startsWith("en"),
+                        onClick = {
+                            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("en"))
+                            showDialog = false
+                        },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text(stringResource(R.string.action_close))
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun LanguageOption(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onClick,
+            colors = RadioButtonDefaults.colors(selectedColor = NeonPurple),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = label, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 

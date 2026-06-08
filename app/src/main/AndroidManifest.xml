@@ -45,6 +45,7 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:hardwareAccelerated="true"
         android:theme="@style/Theme.NightPOS"
+        android:localeConfig="@xml/locale_config"
         tools:targetApi="31">
 
         <activity
@@ -81,6 +82,18 @@
                 android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
                 android:resource="@color/night_black" />
         </activity>
+
+        <!-- Lets AppCompatDelegate.setApplicationLocales persist the chosen
+             in-app language across restarts on API < 33 (the framework
+             per-app language storage handles it natively on API 33+). -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
 
         <!-- FileProvider for WebView file uploads / downloads -->
         <provider
