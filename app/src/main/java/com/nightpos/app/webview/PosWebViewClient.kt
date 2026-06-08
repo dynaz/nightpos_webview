@@ -37,7 +37,7 @@ class PosWebViewClient(
         return handleUrl(view, request.url)
     }
 
-    // Pre-Lollipop fallback (minSdk is 29 so this practically never triggers, kept for completeness).
+    // Pre-Lollipop fallback (minSdk is 23, i.e. Lollipop+, so this practically never triggers, kept for completeness).
     @Suppress("DEPRECATION", "OverridingDeprecatedMember")
     override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
         return handleUrl(view, Uri.parse(url))

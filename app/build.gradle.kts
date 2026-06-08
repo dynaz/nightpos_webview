@@ -10,7 +10,8 @@ android {
 
     defaultConfig {
         applicationId = "com.nightpos.app"
-        minSdk = 29
+        // 23 = Android 6.0/6.0.1 (Marshmallow) — required to support Sunmi T1 POS terminals.
+        minSdk = 23
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
