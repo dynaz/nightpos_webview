@@ -81,6 +81,12 @@ fun NightPOSNavHost(
                         DashboardAction.OpenProducts -> launchTwa(Constants.productsUrl(baseUrl))
                         DashboardAction.OpenDiscountLoyalty -> launchTwa(Constants.discountLoyaltyUrl(baseUrl))
                         DashboardAction.OpenGiftCards -> launchTwa(Constants.giftCardsUrl(baseUrl))
+                        DashboardAction.OpenEmployees -> navController.navigate(
+                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.EMPLOYEES)
+                        )
+                        DashboardAction.OpenPrinters -> navController.navigate(
+                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.PRINTERS)
+                        )
                         DashboardAction.OpenSettings -> navController.navigate(NightPOSDestination.Settings.route)
                         DashboardAction.Logout -> Unit
                     }
@@ -107,12 +113,16 @@ fun NightPOSNavHost(
                 WebViewKind.POS -> stringResource(R.string.menu_open_pos)
                 WebViewKind.REPORTS -> stringResource(R.string.menu_reports)
                 WebViewKind.CUSTOMERS -> stringResource(R.string.menu_customers)
+                WebViewKind.EMPLOYEES -> stringResource(R.string.menu_employees)
+                WebViewKind.PRINTERS -> stringResource(R.string.menu_printers)
             }
             val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
             val url = when (kind) {
                 WebViewKind.POS -> Constants.openPosUrl(baseUrl)
                 WebViewKind.REPORTS -> Constants.reportsUrl(baseUrl)
                 WebViewKind.CUSTOMERS -> Constants.customersUrl(baseUrl)
+                WebViewKind.EMPLOYEES -> Constants.employeesUrl(baseUrl)
+                WebViewKind.PRINTERS -> Constants.printersUrl(baseUrl)
             }
 
             WebViewScreen(

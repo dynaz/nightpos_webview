@@ -23,7 +23,9 @@ sealed class NightPOSDestination(val route: String) {
 enum class WebViewKind(val routeArg: String) {
     POS("pos"),
     REPORTS("reports"),
-    CUSTOMERS("customers");
+    CUSTOMERS("customers"),
+    EMPLOYEES("employees"),
+    PRINTERS("printers");
 
     companion object {
         fun fromRouteArg(value: String?): WebViewKind =

@@ -78,6 +78,11 @@ class NightPOSApplication : Application() {
             prefs:
               security.sandbox.content.level: 0
               security.sandbox.content.syscall_whitelist: ""
+              # Allow HTTPS pages to fetch http://localhost — Firefox blocks this
+              # as mixed content by default (Chrome has a localhost exemption).
+              # Required for the Sunmi printer HTTP bridge on port 8585.
+              security.mixed_content.block_active_content: false
+              security.mixed_content.block_display_content: false
             """.trimIndent()
         )
         return config

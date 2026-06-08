@@ -15,6 +15,10 @@
     <string name="menu_discount_loyalty_desc">จัดการโปรแกรมส่วนลดและสะสมแต้ม</string>
     <string name="menu_gift_cards">Gift Card &amp; eWallet</string>
     <string name="menu_gift_cards_desc">จัดการ Gift Card และ eWallet</string>
+    <string name="menu_employees">พนักงาน</string>
+    <string name="menu_employees_desc">จัดการข้อมูลพนักงาน</string>
+    <string name="menu_printers">เครื่องพิมพ์</string>
+    <string name="menu_printers_desc">ตั้งค่าเครื่องพิมพ์ใบเสร็จ</string>
     <string name="menu_settings">ตั้งค่า</string>
     <string name="menu_settings_desc">ปรับแต่งการตั้งค่าแอป</string>
     <string name="menu_logout">ออกจากระบบ</string>
@@ -76,6 +80,7 @@
     <string name="settings_clear_data_success">ล้างข้อมูลเรียบร้อยแล้ว</string>
 
     <string name="settings_version">เวอร์ชันแอป</string>
+    <string name="settings_webview_engine">เครื่องมือ WebView</string>
 
     <!-- Language -->
     <string name="settings_language">ภาษา</string>

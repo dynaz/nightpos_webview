@@ -202,6 +202,8 @@ fun SettingsScreen(
 
             item { AboutRow() }
 
+            item { WebViewEngineRow() }
+
             item {
                 DiagnosticsRow(
                     serverUrl = uiState.serverUrl,
@@ -699,6 +701,28 @@ private fun buildTestBitmap(widthPx: Int): Bitmap {
     canvas.drawLine(20f, 250f, (widthPx - 20).toFloat(), 250f, paint)
 
     return bitmap
+}
+
+@Composable
+private fun WebViewEngineRow() {
+    SettingsCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_webview_engine),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "GeckoView ${BuildConfig.GECKOVIEW_VERSION}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = TextSecondary,
+            )
+        }
+    }
 }
 
 @Composable

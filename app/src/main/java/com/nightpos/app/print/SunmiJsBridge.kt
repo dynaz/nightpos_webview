@@ -132,6 +132,78 @@ class SunmiJsBridge(private val context: Context) {
          */
         fun buildInjectionScript(): String = """
 (function() {
+
+  // ── localhost:8585 fetch/XHR interceptor ─────────────────────────────────
+  // Firefox/GeckoView blocks fetch("http://localhost:8585") from an HTTPS page
+  // as Mixed Content (Chrome has a localhost exception — Firefox does not).
+  // We intercept those calls and re-route them through window.prompt so they
+  // never hit the network at all.
+  var _PRINT_RE = /^http:\/\/(localhost|127\.0\.0\.1):8585/;
+
+  function _bridgeCall(url, bodyStr) {
+    if (/\/ping/.test(url)) {
+      // Health-check: confirm the bridge is alive without a real printer call.
+      return '{"status":"ok","printer":"sunmi"}';
+    }
+    var args = {};
+    try { args = JSON.parse(bodyStr || '{}'); } catch(e) {}
+    return window.prompt('nightpos:SunmiPrinter', JSON.stringify(args))
+           || '{"success":false,"error":"bridge returned null"}';
+  }
+
+  // -- fetch intercept --
+  var _origFetch = window.fetch;
+  window.fetch = function(input, init) {
+    var url = typeof input === 'string' ? input
+            : (input && typeof input.url === 'string') ? input.url
+            : String(input);
+    if (_PRINT_RE.test(url)) {
+      return new Promise(function(resolve) {
+        var bodyStr = '{}';
+        if (init && init.body) {
+          bodyStr = typeof init.body === 'string' ? init.body
+                  : JSON.stringify(init.body);
+        }
+        var responseBody = _bridgeCall(url, bodyStr);
+        resolve(new Response(responseBody, {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      });
+    }
+    return _origFetch.apply(this, arguments);
+  };
+
+  // -- XMLHttpRequest intercept (for older addon code) --
+  var _origOpen = XMLHttpRequest.prototype.open;
+  var _origSend = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function(method, url) {
+    this._nightposUrl = String(url);
+    this._nightposIntercept = _PRINT_RE.test(this._nightposUrl);
+    if (!this._nightposIntercept) {
+      _origOpen.apply(this, arguments);
+    }
+  };
+  XMLHttpRequest.prototype.send = function(body) {
+    if (!this._nightposIntercept) {
+      return _origSend.apply(this, arguments);
+    }
+    var xhr = this;
+    var bodyStr = (typeof body === 'string') ? body : '{}';
+    setTimeout(function() {
+      var responseBody = _bridgeCall(xhr._nightposUrl, bodyStr);
+      Object.defineProperty(xhr, 'readyState',   { get: function() { return 4; } });
+      Object.defineProperty(xhr, 'status',       { get: function() { return 200; } });
+      Object.defineProperty(xhr, 'responseText', { get: function() { return responseBody; } });
+      Object.defineProperty(xhr, 'response',     { get: function() { return responseBody; } });
+      if (typeof xhr.onreadystatechange === 'function') xhr.onreadystatechange();
+      if (typeof xhr.onload === 'function') xhr.onload();
+    }, 0);
+  };
+
+  console.log('[NightPOS] localhost:8585 fetch/XHR interceptor installed');
+
+  // ── flutter_inappwebview bridge ──────────────────────────────────────────
   if (window.flutter_inappwebview) return;
 
   // WebView mode — NightPOSBridge injected via addJavascriptInterface

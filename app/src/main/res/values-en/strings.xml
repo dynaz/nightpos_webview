@@ -15,6 +15,10 @@
     <string name="menu_discount_loyalty_desc">Manage discount and loyalty programs</string>
     <string name="menu_gift_cards">Gift Card &amp; eWallet</string>
     <string name="menu_gift_cards_desc">Manage gift cards and eWallets</string>
+    <string name="menu_employees">Employees</string>
+    <string name="menu_employees_desc">Manage employee records</string>
+    <string name="menu_printers">Printers</string>
+    <string name="menu_printers_desc">Configure receipt printers</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_settings_desc">Customize app settings</string>
     <string name="menu_logout">Log Out</string>
@@ -76,6 +80,7 @@
     <string name="settings_clear_data_success">Data cleared successfully</string>
 
     <string name="settings_version">App Version</string>
+    <string name="settings_webview_engine">WebView Engine</string>
 
     <!-- Language -->
     <string name="settings_language">Language</string>

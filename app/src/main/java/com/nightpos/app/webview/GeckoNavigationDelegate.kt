@@ -8,6 +8,7 @@ import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.WebRequestError
+import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 
 /**
  * GeckoView equivalent of [PosWebViewClient]: restricts navigation to the allowed
@@ -20,9 +21,13 @@ class GeckoNavigationDelegate(
     private val onBlockedDomain: (host: String) -> Unit,
 ) : GeckoSession.NavigationDelegate {
 
-    // Signature changed across GeckoView versions — provide both overloads so the
-    // code compiles against either v99 (2-arg) or v143 (4-arg) API.
-    override fun onLocationChange(session: GeckoSession, url: String?) {
+    // GeckoView 100+ signature: url + content permissions list + user-gesture flag.
+    override fun onLocationChange(
+        session: GeckoSession,
+        url: String?,
+        perms: List<ContentPermission>,
+        hasUserGesture: Boolean,
+    ) {
         onPageFinished(url)
     }
 

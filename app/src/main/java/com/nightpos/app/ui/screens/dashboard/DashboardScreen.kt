@@ -18,11 +18,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
@@ -53,6 +55,7 @@ import com.nightpos.app.ui.theme.NeonPink
 import com.nightpos.app.ui.theme.NeonPurple
 import com.nightpos.app.ui.theme.NeonVioletLight
 import com.nightpos.app.ui.theme.NightBlack
+import com.nightpos.app.ui.theme.OrangeAccent
 import com.nightpos.app.ui.theme.SuccessGreen
 
 private data class DashboardMenuItem(
@@ -72,6 +75,8 @@ sealed interface DashboardAction {
     data object OpenProducts : DashboardAction
     data object OpenDiscountLoyalty : DashboardAction
     data object OpenGiftCards : DashboardAction
+    data object OpenEmployees : DashboardAction
+    data object OpenPrinters : DashboardAction
     data object OpenSettings : DashboardAction
     data object Logout : DashboardAction
 }
@@ -146,6 +151,20 @@ fun DashboardScreen(
                     icon = Icons.Filled.CardGiftcard,
                     accent = LimeAccent,
                     action = DashboardAction.OpenGiftCards,
+                ),
+                DashboardMenuItem(
+                    title = stringResource(R.string.menu_employees),
+                    description = stringResource(R.string.menu_employees_desc),
+                    icon = Icons.Filled.Badge,
+                    accent = OrangeAccent,
+                    action = DashboardAction.OpenEmployees,
+                ),
+                DashboardMenuItem(
+                    title = stringResource(R.string.menu_printers),
+                    description = stringResource(R.string.menu_printers_desc),
+                    icon = Icons.Filled.Print,
+                    accent = NeonCyan,
+                    action = DashboardAction.OpenPrinters,
                 ),
                 DashboardMenuItem(
                     title = stringResource(R.string.menu_settings),
