@@ -9,6 +9,8 @@ sealed class NightPOSDestination(val route: String) {
     data object Splash : NightPOSDestination("splash")
     data object Dashboard : NightPOSDestination("dashboard")
     data object Settings : NightPOSDestination("settings")
+    data object PosLogin : NightPOSDestination("pos_login")
+    data object PosMain : NightPOSDestination("pos_main")
 
     /** Generic WebView destination; the `kind` route argument decides which URL + title to load. */
     object WebViewDest {

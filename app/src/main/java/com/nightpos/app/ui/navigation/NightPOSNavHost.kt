@@ -4,9 +4,14 @@ import android.webkit.WebView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -16,6 +21,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.nightpos.app.AppContainer
 import com.nightpos.app.R
+import com.nightpos.app.ui.pos.PinLoginScreen
+import com.nightpos.app.ui.pos.PinLoginViewModel
+import com.nightpos.app.ui.pos.PosMainScreen
 import com.nightpos.app.ui.screens.dashboard.DashboardAction
 import com.nightpos.app.ui.screens.dashboard.DashboardScreen
 import com.nightpos.app.ui.screens.dashboard.DashboardViewModel
@@ -26,14 +34,9 @@ import com.nightpos.app.ui.screens.webview.WebViewScreen
 import com.nightpos.app.ui.screens.webview.WebViewViewModel
 import com.nightpos.app.twa.TwaLauncherActivity
 import com.nightpos.app.util.Constants
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
-/**
- * Single-Activity navigation graph. A single shared [WebView] is created once
- * (in [com.nightpos.app.MainActivity]) and threaded through every screen that
- * needs it (Dashboard for logout, Settings for "clear data", WebViewScreen for
- * display) — this keeps the Odoo SPA's session/state alive while switching
- * between "เปิดขาย / รายงาน / ลูกค้า" tabs, and gives logout one place to clear from.
- */
 @Composable
 fun NightPOSNavHost(
     appContainer: AppContainer,
@@ -65,11 +68,6 @@ fun NightPOSNavHost(
             val context = LocalContext.current
             val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
 
-            // Odoo destinations open in an external browser rather than the in-app
-            // WebView. TwaLauncherActivity prefers handing off to Firefox (modern Gecko
-            // engine — needed on Sunmi T1 / Android 6.0.1 where Chrome is too old to
-            // render Odoo 19) and falls back to a Trusted Web Activity / system browser
-            // when Firefox isn't installed.
             fun launchTwa(url: String) {
                 context.startActivity(TwaLauncherActivity.createIntent(context, url))
             }
@@ -81,20 +79,65 @@ fun NightPOSNavHost(
                     when (action) {
                         DashboardAction.OpenNposHome -> launchTwa(Constants.nposHomeUrl(baseUrl))
                         DashboardAction.OpenPos -> launchTwa(Constants.openPosUrl(baseUrl))
-                        DashboardAction.OpenReports -> launchTwa(Constants.reportsUrl(baseUrl))
+                        DashboardAction.OpenReports -> navController.navigate(NightPOSDestination.PosLogin.route)
                         DashboardAction.OpenCustomers -> launchTwa(Constants.customersUrl(baseUrl))
                         DashboardAction.OpenProducts -> launchTwa(Constants.productsUrl(baseUrl))
                         DashboardAction.OpenDiscountLoyalty -> launchTwa(Constants.discountLoyaltyUrl(baseUrl))
                         DashboardAction.OpenGiftCards -> launchTwa(Constants.giftCardsUrl(baseUrl))
                         DashboardAction.OpenSettings -> navController.navigate(NightPOSDestination.Settings.route)
-                        DashboardAction.Logout -> Unit // handled internally by DashboardScreen's dialog
+                        DashboardAction.Logout -> Unit
                     }
                 },
-                onLoggedOut = {
-                    // WebView is already cleared by DashboardViewModel; just reset to a blank page
-                    // so the next "Open POS" starts a fresh, unauthenticated session.
-                    sharedWebView.loadUrl("about:blank")
+                onLoggedOut = { sharedWebView.loadUrl("about:blank") },
+            )
+        }
+
+        composable(NightPOSDestination.PosLogin.route) {
+            val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
+            val prefs = appContainer.preferencesManager
+            val db = runBlocking { prefs.odooDb.first() }
+            val login = runBlocking { prefs.odooApiLogin.first() }
+            val password = runBlocking { prefs.odooApiPassword.first() }
+
+            val pinViewModel: PinLoginViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        PinLoginViewModel(
+                            authRepository = appContainer.authRepository,
+                            baseUrl = baseUrl,
+                            db = db,
+                            apiLogin = login,
+                            apiPassword = password,
+                        )
+                    }
                 },
+            )
+
+            var employeeName by remember { mutableStateOf("") }
+            var isManager by remember { mutableStateOf(false) }
+
+            PinLoginScreen(
+                viewModel = pinViewModel,
+                onLoginSuccess = { manager, name ->
+                    employeeName = name
+                    isManager = manager
+                    navController.navigate(NightPOSDestination.PosMain.route) {
+                        popUpTo(NightPOSDestination.PosLogin.route) { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        composable(NightPOSDestination.PosMain.route) {
+            val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
+            // Employee context is passed via shared auth repository after successful PIN login
+            val employee = appContainer.authRepository.lastEmployee
+            PosMainScreen(
+                employeeName = employee?.name ?: "",
+                isManager = employee?.isManager ?: false,
+                repository = appContainer.authRepository.makeRepository(),
+                baseUrl = baseUrl,
+                onBack = { navController.popBackStack() },
             )
         }
 

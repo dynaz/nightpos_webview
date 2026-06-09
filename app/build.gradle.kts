@@ -91,6 +91,9 @@ dependencies {
     implementation(libs.androidbrowserhelper)
     implementation(libs.androidx.appcompat)
     implementation(libs.sunmi.printerlibrary)
+    implementation(libs.okhttp3)
+    implementation(libs.okhttp3.logging)
+    implementation(libs.gson)
 
     debugImplementation(libs.androidx.ui.tooling)
 }

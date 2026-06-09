@@ -25,6 +25,9 @@ class PreferencesManager(private val context: Context) {
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val AUTO_REOPEN_POS = booleanPreferencesKey("auto_reopen_pos")
         val PRINTER_PAPER_WIDTH_MM = intPreferencesKey("printer_paper_width_mm")
+        val ODOO_DB = stringPreferencesKey("odoo_db")
+        val ODOO_API_LOGIN = stringPreferencesKey("odoo_api_login")
+        val ODOO_API_PASSWORD = stringPreferencesKey("odoo_api_password")
     }
 
     val serverUrl: Flow<String> = context.dataStore.data.map { prefs ->
@@ -66,4 +69,12 @@ class PreferencesManager(private val context: Context) {
     suspend fun setPrinterPaperWidthMm(widthMm: Int) {
         context.dataStore.edit { it[Keys.PRINTER_PAPER_WIDTH_MM] = widthMm }
     }
+
+    val odooDb: Flow<String> = context.dataStore.data.map { prefs -> prefs[Keys.ODOO_DB] ?: "" }
+    val odooApiLogin: Flow<String> = context.dataStore.data.map { prefs -> prefs[Keys.ODOO_API_LOGIN] ?: "admin" }
+    val odooApiPassword: Flow<String> = context.dataStore.data.map { prefs -> prefs[Keys.ODOO_API_PASSWORD] ?: "" }
+
+    suspend fun setOdooDb(db: String) { context.dataStore.edit { it[Keys.ODOO_DB] = db } }
+    suspend fun setOdooApiLogin(login: String) { context.dataStore.edit { it[Keys.ODOO_API_LOGIN] = login } }
+    suspend fun setOdooApiPassword(pw: String) { context.dataStore.edit { it[Keys.ODOO_API_PASSWORD] = pw } }
 }

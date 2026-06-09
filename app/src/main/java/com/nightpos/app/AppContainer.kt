@@ -7,6 +7,8 @@ import androidx.lifecycle.viewmodel.initializer
 import com.nightpos.app.data.NetworkConnectivityObserver
 import com.nightpos.app.data.PreferencesManager
 import com.nightpos.app.data.SessionManager
+import com.nightpos.app.data.api.OdooRpcClient
+import com.nightpos.app.data.repository.AuthRepository
 import com.nightpos.app.ui.screens.dashboard.DashboardViewModel
 import com.nightpos.app.ui.screens.settings.SettingsViewModel
 import com.nightpos.app.ui.screens.webview.WebViewViewModel
@@ -24,6 +26,8 @@ class AppContainer(context: Context) {
     val preferencesManager: PreferencesManager by lazy { PreferencesManager(appContext) }
     val sessionManager: SessionManager by lazy { SessionManager(appContext) }
     val connectivityObserver: NetworkConnectivityObserver by lazy { NetworkConnectivityObserver(appContext) }
+    val odooRpcClient: OdooRpcClient by lazy { OdooRpcClient() }
+    val authRepository: AuthRepository by lazy { AuthRepository(odooRpcClient) }
 
     fun dashboardViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
         initializer { DashboardViewModel(sessionManager) }
