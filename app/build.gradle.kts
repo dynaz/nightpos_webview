@@ -10,11 +10,11 @@ android {
 
     defaultConfig {
         applicationId = "com.nightpos.app"
-        // 21 = Android 5.0 — GeckoView 142 supports API 21+.
-        // Sunmi T2 runs Android 7.1.1 (API 25), well above this floor.
-        // Note: GeckoView 143+ raised minSdk to 26 (Android 8.0), so 142 is the
-        // highest version that can run on the T2's Android 7.1.1.
-        minSdk = 21
+        // 30 = Android 11 — Sunmi D2s Plus runs Android 11.0.0 (API 30), arm64-v8a.
+        // GeckoView 142 supports API 21+, so API 30 is well within range.
+        // GeckoView 143+ raised minSdk to 26 — v142 is used to stay on the
+        // same version as other NightPOS devices in this project.
+        minSdk = 30
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
@@ -95,8 +95,8 @@ dependencies {
     implementation(libs.androidbrowserhelper)
     implementation(libs.androidx.appcompat)
     implementation(libs.sunmi.printerlibrary)
-    // ARM64-only variant — Sunmi T2 is arm64-v8a, Android 7.1.1 (API 25).
-    // v142 is the highest GeckoView that supports API 21+ (v143+ raised floor to API 26).
+    // ARM64-only variant — Sunmi D2s Plus is arm64-v8a, Android 11.0.0 (API 30).
+    // v142 is used across all NightPOS devices for consistent browser behaviour.
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
     // Local HTTP server for printer bridge (avoids SELinux socket-ioctl restriction
     // that prevents GeckoView IPC from working on kernel 3.10 / Android 6.0.1).
