@@ -10,8 +10,9 @@ android {
 
     defaultConfig {
         applicationId = "com.nightpos.app"
-        // 21 = Android 5.0 — floor raised above Material's minSdk 19.
-        // GeckoView 105 itself only needs API 16; D2s runs Android 7.1.2 (API 25).
+        // 21 = Android 5.0 — GeckoView 142 supports API 21+.
+        // Sunmi D2s runs Android 7.1.2 (API 25), well above this floor.
+        // GeckoView 143+ raised minSdk to 26, so 142 is the highest version for D2s.
         minSdk = 21
         targetSdk = 35
         versionCode = 1
@@ -21,7 +22,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        buildConfigField("String", "GECKOVIEW_VERSION", "\"105.0\"")
+        buildConfigField("String", "GECKOVIEW_VERSION", "\"142.0\"")
     }
 
     signingConfigs {
@@ -94,8 +95,10 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.sunmi.printerlibrary)
     // 32-bit ARM variant — Sunmi D2s is armeabi-v7a, Android 7.1.2 (API 25).
-    // GeckoView 105 (Firefox 105) supports API 16+ so the D2s is well within range.
-    implementation("org.mozilla.geckoview:geckoview-armeabi-v7a:105.0.20221007134813")
+    // v142 is the highest GeckoView that supports API 21+ (v143+ raised floor to API 26).
+    // Firefox 130+ added 'camera' to navigator.permissions.query PermissionName enum,
+    // fixing the UncaughtPromiseError seen with GeckoView 105.
+    implementation("org.mozilla.geckoview:geckoview-armeabi-v7a:142.0.20250827004350")
     // Local HTTP server for printer bridge (avoids SELinux socket-ioctl restriction
     // that prevents GeckoView IPC from working on kernel 3.10 / Android 6.0.1).
     implementation("org.nanohttpd:nanohttpd:2.3.1")

@@ -21,11 +21,12 @@ class GeckoNavigationDelegate(
     private val onBlockedDomain: (host: String) -> Unit,
 ) : GeckoSession.NavigationDelegate {
 
-    // GeckoView 105 signature: 3-arg (hasUserGesture was added in a later version).
+    // GeckoView 100+ signature: url + content permissions list + user-gesture flag.
     override fun onLocationChange(
         session: GeckoSession,
         url: String?,
         perms: List<ContentPermission>,
+        hasUserGesture: Boolean,
     ) {
         onPageFinished(url)
     }
