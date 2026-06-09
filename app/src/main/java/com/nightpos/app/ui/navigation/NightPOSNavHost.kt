@@ -54,7 +54,7 @@ fun NightPOSNavHost(
         composable(NightPOSDestination.Splash.route) {
             SplashScreen(
                 onFinished = {
-                    navController.navigate(NightPOSDestination.Dashboard.route) {
+                    navController.navigate(NightPOSDestination.PosLogin.route) {
                         popUpTo(NightPOSDestination.Splash.route) { inclusive = true }
                     }
                 },
@@ -79,7 +79,7 @@ fun NightPOSNavHost(
                     when (action) {
                         DashboardAction.OpenNposHome -> launchTwa(Constants.nposHomeUrl(baseUrl))
                         DashboardAction.OpenPos -> launchTwa(Constants.openPosUrl(baseUrl))
-                        DashboardAction.OpenReports -> navController.navigate(NightPOSDestination.PosLogin.route)
+                        DashboardAction.OpenReports -> navController.navigate(NightPOSDestination.PosMain.route)
                         DashboardAction.OpenCustomers -> launchTwa(Constants.customersUrl(baseUrl))
                         DashboardAction.OpenProducts -> launchTwa(Constants.productsUrl(baseUrl))
                         DashboardAction.OpenDiscountLoyalty -> launchTwa(Constants.discountLoyaltyUrl(baseUrl))
@@ -121,7 +121,7 @@ fun NightPOSNavHost(
                 onLoginSuccess = { manager, name ->
                     employeeName = name
                     isManager = manager
-                    navController.navigate(NightPOSDestination.PosMain.route) {
+                    navController.navigate(NightPOSDestination.Dashboard.route) {
                         popUpTo(NightPOSDestination.PosLogin.route) { inclusive = true }
                     }
                 },
