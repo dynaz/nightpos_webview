@@ -55,7 +55,7 @@ class AuthRepository(private val client: OdooRpcClient) {
                 val userIdEl = emp.get("user_id")
                 val userId = when {
                     userIdEl == null || userIdEl.isJsonNull -> null
-                    userIdEl.isJsonArray -> userIdEl.asJsonArray.getOrNull(0)?.asInt
+                    userIdEl.isJsonArray -> if (userIdEl.asJsonArray.size() > 0) userIdEl.asJsonArray[0].asInt else null
                     else -> userIdEl.asInt
                 }
                 val jobTitle = emp.get("job_title")?.takeIf { !it.isJsonNull }?.asString ?: ""

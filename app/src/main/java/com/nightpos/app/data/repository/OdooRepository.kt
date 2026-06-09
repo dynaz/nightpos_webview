@@ -82,7 +82,7 @@ class OdooRepository(
         val avg = if (count > 0) total / count else 0.0
         val from = orders.firstOrNull()
             ?.asJsonObject?.get("date_order")?.asString
-            ?.let { runCatching { displayFmt.format(utcFmt.parse(it) ?: Date()) }.getOrElse { it } }
+            ?.let { dateStr -> runCatching { displayFmt.format(utcFmt.parse(dateStr) ?: Date()) }.getOrElse { dateStr } }
             ?: ""
         return SalesSummaryData(total, count, avg, from)
     }
@@ -105,7 +105,7 @@ class OdooRepository(
             val nameEl = obj.get("product_id.categ_id")
             val name = when {
                 nameEl == null || nameEl.isJsonNull -> "No Category"
-                nameEl.isJsonArray -> nameEl.asJsonArray.getOrNull(1)?.asString ?: "No Category"
+                nameEl.isJsonArray -> if (nameEl.asJsonArray.size() > 1) nameEl.asJsonArray[1].asString else "No Category"
                 else -> nameEl.asString
             }
             val amount = obj.get("price_subtotal_incl")?.asDouble ?: 0.0
@@ -133,7 +133,7 @@ class OdooRepository(
             val nameEl = obj.get("product_id")
             val name = when {
                 nameEl == null || nameEl.isJsonNull -> return@mapNotNull null
-                nameEl.isJsonArray -> nameEl.asJsonArray.getOrNull(1)?.asString ?: return@mapNotNull null
+                nameEl.isJsonArray -> if (nameEl.asJsonArray.size() > 1) nameEl.asJsonArray[1].asString else return@mapNotNull null
                 else -> nameEl.asString
             }
             val qty = obj.get("qty")?.asDouble ?: 0.0
