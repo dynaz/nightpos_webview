@@ -5,7 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.net.Uri
-import android.webkit.WebView
+import org.mozilla.geckoview.GeckoView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -87,7 +87,7 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    sharedWebView: WebView?,
+    sharedGeckoView: GeckoView?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -191,7 +191,7 @@ fun SettingsScreen(
                 ClearDataRow(
                     isClearing = uiState.isClearingData || event == SettingsEvent.ClearingStarted,
                     onClear = {
-                        scope.launch { viewModel.clearWebViewData(sharedWebView) }
+                        scope.launch { viewModel.clearWebViewData(sharedGeckoView?.session) }
                     },
                 )
             }
@@ -201,6 +201,8 @@ fun SettingsScreen(
             item { SectionHeader(stringResource(R.string.settings_section_about)) }
 
             item { AboutRow() }
+
+            item { WebViewEngineRow() }
 
             item {
                 DiagnosticsRow(
@@ -699,6 +701,28 @@ private fun buildTestBitmap(widthPx: Int): Bitmap {
     canvas.drawLine(20f, 250f, (widthPx - 20).toFloat(), 250f, paint)
 
     return bitmap
+}
+
+@Composable
+private fun WebViewEngineRow() {
+    SettingsCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_webview_engine),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "GeckoView ${BuildConfig.GECKOVIEW_VERSION}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = TextSecondary,
+            )
+        }
+    }
 }
 
 @Composable

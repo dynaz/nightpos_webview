@@ -21,6 +21,7 @@ val SuccessGreen = Color(0xFF34D399)
 val ErrorRed = Color(0xFFF87171)
 val NeonCyan = Color(0xFF22D3EE)
 val LimeAccent = Color(0xFFA3E635)
+val OrangeAccent = Color(0xFFFF7043)
 
 val TextPrimary = Color(0xFFF5F3FA)
 val TextSecondary = Color(0xFFB8B3C7)

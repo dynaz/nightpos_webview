@@ -1,6 +1,6 @@
 package com.nightpos.app.ui.screens.settings
 
-import android.webkit.WebView
+import org.mozilla.geckoview.GeckoSession
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nightpos.app.data.PreferencesManager
@@ -70,9 +70,9 @@ class SettingsViewModel(
         preferencesManager.setPrinterPaperWidthMm(widthMm)
     }
 
-    fun clearWebViewData(webView: WebView?) = viewModelScope.launch {
+    fun clearWebViewData(session: GeckoSession?) = viewModelScope.launch {
         _events.value = SettingsEvent.ClearingStarted
-        sessionManager.clearSession(webView)
+        sessionManager.clearSession(session)
         _events.value = SettingsEvent.ClearingFinished
     }
 

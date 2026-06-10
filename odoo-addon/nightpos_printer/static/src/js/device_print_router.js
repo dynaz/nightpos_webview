@@ -27,8 +27,83 @@ const _devicePrefsByConfigId = new Map();
 /** @type {string|null} */
 let _deviceKey = null;
 
+const _HTTP_BRIDGE_URL = "http://localhost:8585";
+
+/**
+ * Install window.flutter_inappwebview if we are inside the NightPOS GeckoView
+ * (where the native PromptDelegate intercepts window.prompt("nightpos:…", …)).
+ * Must be called before any code that checks for flutter_inappwebview.
+ */
+function _installGeckoViewBridgeIfNeeded() {
+    if (typeof window === "undefined") return;
+    if (window.flutter_inappwebview || window.NightPOSBridge) return;
+    try {
+        const probe = window.prompt("nightpos:ping", "{}");
+        if (probe !== null) {
+            window.flutter_inappwebview = {
+                callHandler: function (handlerName, args) {
+                    return new Promise(function (resolve, reject) {
+                        try {
+                            const result = window.prompt(
+                                "nightpos:" + handlerName,
+                                JSON.stringify(args || {})
+                            );
+                            resolve(result ? JSON.parse(result) : { success: false, error: "no result" });
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                },
+            };
+            console.log("[NightPOS] GeckoView bridge installed");
+        }
+    } catch (_) {
+        /* not in NightPOS */
+    }
+}
+
+/**
+ * Probe the NightPOS local HTTP server (PrintHttpServer on localhost:8585).
+ * Returns true and installs window.flutter_inappwebview shim if the server
+ * is reachable. Called from probeDeviceCapabilities() so it runs async at
+ * POS session start rather than blocking module load.
+ */
+async function _probeAndInstallHttpBridge() {
+    if (window.flutter_inappwebview || window.NightPOSBridge) return true;
+    try {
+        const res = await Promise.race([
+            fetch(`${_HTTP_BRIDGE_URL}/ping`),
+            new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 1500)),
+        ]);
+        if (!res.ok) return false;
+        window.flutter_inappwebview = {
+            callHandler: async function (handlerName, args) {
+                const r = await fetch(`${_HTTP_BRIDGE_URL}/print`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(args || {}),
+                });
+                return r.json();
+            },
+        };
+        console.log(`[NightPOS] HTTP bridge installed (${_HTTP_BRIDGE_URL})`);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+_installGeckoViewBridgeIfNeeded();
+
+// If no synchronous bridge was found, probe the HTTP server in the background.
+// The localhost round-trip is ~50 ms, so by the time the user interacts with
+// any print UI the shim will be installed and isNightposAppAvailable() returns true.
+if (!window.flutter_inappwebview && !window.NightPOSBridge) {
+    _probeAndInstallHttpBridge();
+}
+
 export function isNightposAppAvailable() {
-    // flutter_inappwebview = Flutter InAppWebView (original target)
+    // flutter_inappwebview = Flutter InAppWebView OR GeckoView shim (installed above)
     // NightPOSBridge = standard Android WebView with SunmiJsBridge injected
     return typeof window.flutter_inappwebview !== "undefined" ||
            typeof window.NightPOSBridge !== "undefined";
@@ -276,6 +351,14 @@ export async function probeDeviceCapabilities() {
         nightposApp: isNightposAppAvailable(),
         sunmi: false,
     };
+
+    // If no in-process bridge found, probe the local HTTP server.
+    // This covers Firefox Custom Tabs / any browser where the app is running
+    // alongside a NightPOS Android service on the same device.
+    if (!_capabilities.nightposApp) {
+        _capabilities.nightposApp = await _probeAndInstallHttpBridge();
+    }
+
     if (_capabilities.nightposApp) {
         try {
             const res = await withTimeout(

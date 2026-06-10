@@ -21,6 +21,11 @@
         'views/nightpos_device_print_views.xml',
     ],
     'assets': {
+        'web.assets_web': [
+            # Prepended so it executes before any OWL/Odoo JS in the bundle.
+            # Required for GeckoView 99 (Firefox 99) on Sunmi T1 (Android 6.0.1).
+            ('prepend', 'nightpos_printer/static/src/js/geckoview_polyfill.js'),
+        ],
         'web.assets_backend': [
             'nightpos_printer/static/src/js/nightpos_test_print_routed_stub.js',
             'nightpos_printer/static/src/js/nightpos_pos_debug.js',

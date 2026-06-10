@@ -13,20 +13,26 @@ object Constants {
     /** Default Odoo POS host. Can be overridden at runtime via Settings (stored in DataStore). */
     const val DEFAULT_BASE_URL = "https://soho.nightpos.com"
 
-    const val POS_PATH = "/pos/ui"
+    const val POS_PATH = "/npos/point-of-sale"
     const val BACKEND_PATH = "/web"
+    const val REPORTS_PATH = "/npos/dashboards?dashboard_id=7"
     const val NPOS_HOME_PATH = "/npos"
+    const val CUSTOMERS_PATH = "/npos/customers"
     const val PRODUCTS_PATH = "/npos/action-770"
-    const val DISCOUNT_LOYALTY_PATH = "/npos/action-918"
-    const val GIFT_CARDS_PATH = "/npos/action-919"
+    const val DISCOUNT_LOYALTY_PATH = "/npos/discount-loyalty"
+    const val GIFT_CARDS_PATH = "/npos/gift-cards-ewallet"
+    const val EMPLOYEES_PATH = "/npos/employees"
+    const val PRINTERS_PATH = "/npos/action-968"
 
     fun nposHomeUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$NPOS_HOME_PATH"
     fun openPosUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$POS_PATH"
-    fun reportsUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$BACKEND_PATH"
-    fun customersUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$BACKEND_PATH"
+    fun reportsUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$REPORTS_PATH"
+    fun customersUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$CUSTOMERS_PATH"
     fun productsUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$PRODUCTS_PATH"
     fun discountLoyaltyUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$DISCOUNT_LOYALTY_PATH"
     fun giftCardsUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$GIFT_CARDS_PATH"
+    fun employeesUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$EMPLOYEES_PATH"
+    fun printersUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$PRINTERS_PATH"
 
     /** Root domain that all WebView navigation is restricted to (subdomains included). */
     const val ALLOWED_DOMAIN = "nightpos.com"
