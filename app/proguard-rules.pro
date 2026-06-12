@@ -10,3 +10,9 @@
 
 # Keep Compose runtime
 -dontwarn org.jetbrains.annotations.**
+
+# GeckoView pulls in SnakeYAML (geckoview-config.yaml parsing), whose
+# reflection-based PropertyUtils references java.beans.* — not present on
+# Android but only reached via code paths GeckoView doesn't exercise.
+-dontwarn java.beans.**
+-dontwarn org.yaml.snakeyaml.**
