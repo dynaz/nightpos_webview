@@ -129,6 +129,24 @@ class NightPOSApplication : Application() {
               toolkit.telemetry.unified: false
               datareporting.healthreport.uploadEnabled: false
               datareporting.policy.dataSubmissionEnabled: false
+
+              # Service Workers — must be on for Odoo PWA offline mode
+              dom.serviceWorkers.enabled: true
+              dom.serviceWorkers.interception.enabled: true
+              dom.serviceWorkers.openWindow.enabled: true
+
+              # IndexedDB, Cache Storage, Storage Manager — POS caches product/order
+              # data locally to avoid full reload on every session
+              dom.indexedDB.enabled: true
+              dom.caches.enabled: true
+              dom.storageManager.enabled: true
+
+              # Origin Private File System — used by Odoo 17+ for large binary blobs
+              dom.fs.enabled: true
+
+              # Raise IndexedDB warning threshold to 512 MB (default is 50 MB).
+              # Odoo POS product catalogue + images can exceed the default easily.
+              dom.indexedDB.warningQuota: 512
             """.trimIndent()
         )
         return config

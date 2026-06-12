@@ -48,6 +48,7 @@ import com.nightpos.app.ui.theme.ErrorRed
 import com.nightpos.app.ui.theme.NeonPurple
 import com.nightpos.app.ui.theme.NightBlack
 import com.nightpos.app.webview.GeckoNavigationDelegate
+import com.nightpos.app.webview.GeckoPosPermissionDelegate
 import com.nightpos.app.webview.GeckoProgressDelegate
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
@@ -95,17 +96,20 @@ fun WebViewScreen(
         )
     }
 
+    val permissionDelegate = remember { GeckoPosPermissionDelegate() }
+
     DisposableEffect(session, navigationDelegate, progressDelegate) {
         session?.navigationDelegate = navigationDelegate
         session?.progressDelegate = progressDelegate
         session?.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
+        // Grant all POS permissions (storage, camera, location, autoplay) without
+        // prompting — required for Service Workers and IndexedDB to function.
+        session?.permissionDelegate = permissionDelegate
         onDispose {
             session?.navigationDelegate = null
             session?.progressDelegate = null
-            // Keep the prompt delegate alive so pos-configs.js can still report
-            // outlet names even after leaving the WebView screen (the singleton
-            // bridge never changes, so re-assigning is safe and always correct).
             session?.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
+            session?.permissionDelegate = permissionDelegate
         }
     }
 

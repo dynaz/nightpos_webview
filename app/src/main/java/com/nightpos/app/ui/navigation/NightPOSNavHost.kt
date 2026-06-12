@@ -17,6 +17,7 @@ import androidx.navigation.navArgument
 import com.nightpos.app.AppContainer
 import com.nightpos.app.NightPOSApplication
 import com.nightpos.app.R
+import com.nightpos.app.webview.GeckoPosPermissionDelegate
 import com.nightpos.app.webview.GeckoRuntimeHolder
 import com.nightpos.app.ui.screens.dashboard.DashboardAction
 import com.nightpos.app.ui.screens.dashboard.DashboardScreen
@@ -59,8 +60,10 @@ fun NightPOSNavHost(
         }
         val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
         android.util.Log.i("NightPOS", "prefetch: opening session and loading $baseUrl/npos")
-        // Ensure the prompt delegate is wired so posConfigs messages are received
+        // Wire delegates before opening — ensures SW/IndexedDB permissions are
+        // granted from the very first document load, not after a race.
         session.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
+        session.permissionDelegate = GeckoPosPermissionDelegate()
         if (!session.isOpen) {
             session.open(GeckoRuntimeHolder.runtime)
         }
