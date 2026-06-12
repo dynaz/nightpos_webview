@@ -133,7 +133,7 @@ class NightPOSApplication : Application() {
      * Only NETWORK_CACHE and IMAGE_CACHE are used — never COOKIES or
      * DOM_STORAGES, which would destroy the Odoo session and IndexedDB data.
      */
-    private fun releaseGeckoCaches(flags: Int) {
+    private fun releaseGeckoCaches(flags: Long) {
         appScope.launch {
             runCatching {
                 GeckoRuntimeHolder.runtime.storageController.clearData(flags)

@@ -48,18 +48,14 @@ object GeckoRuntimeHolder {
                 // This is an internal POS app on a private network — disable all
                 // privacy/security scanning features that add latency or block
                 // legitimate Odoo resources.
-                rt.settings.contentBlocking.apply {
-                    // No anti-tracking (blocks Odoo's own XHR/fetch calls)
-                    antiTracking = ContentBlocking.AntiTracking.NONE
-                    // Accept all cookies — Odoo session requires first-party cookies
-                    cookieBehavior = ContentBlocking.CookieBehavior.ACCEPT_ALL
-                    // Disable Enhanced Tracking Protection entirely
-                    enhancedTrackingProtectionLevel = ContentBlocking.EtpLevel.NONE
-                    // No Safe Browsing — avoids Google lookups on every URL
-                    safeBrowsing = ContentBlocking.SafeBrowsing.NONE
-                    // No social-media tracker blocking
-                    strictSocialTrackingProtection = false
-                }
+                // ContentBlocking.Settings uses fluent setters (return `this`),
+                // so Kotlin property syntax is unavailable — call as methods.
+                rt.settings.contentBlocking
+                    .antiTracking(ContentBlocking.AntiTracking.NONE)
+                    .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_ALL)
+                    .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.NONE)
+                    .safeBrowsing(ContentBlocking.SafeBrowsing.NONE)
+                    .strictSocialTrackingProtection(false)
             }
         }
     }
