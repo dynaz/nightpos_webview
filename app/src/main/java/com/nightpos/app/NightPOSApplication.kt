@@ -11,6 +11,7 @@ import com.nightpos.app.print.SunmiJsBridge
 import com.nightpos.app.print.SunmiPrinterConnection
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
+import org.mozilla.geckoview.StorageController
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -73,6 +74,22 @@ class NightPOSApplication : Application() {
         polyfillLatch.await(3, TimeUnit.SECONDS)
     }
 
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+
+        // Sunmi POS terminals run with ~2GB RAM and the GeckoView session stays
+        // open for an entire shift. When Android signals memory pressure, drop
+        // GeckoView's network/image caches (cookies, localStorage, IndexedDB and
+        // the active session are preserved) so the app doesn't get OOM-killed or
+        // throttled by the OS.
+        if (level >= TRIM_MEMORY_RUNNING_LOW) {
+            runCatching {
+                geckoRuntime.storageController.clearData(StorageController.ClearFlags.ALL_CACHES)
+                Log.i("NightPOS", "onTrimMemory($level): cleared GeckoView network/image caches")
+            }.onFailure { Log.w("NightPOS", "onTrimMemory clearData failed: ${it.message}") }
+        }
+    }
+
     private fun isMainProcess(): Boolean {
         val pid = Process.myPid()
         val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -114,6 +131,12 @@ class NightPOSApplication : Application() {
               # Required for the Sunmi printer HTTP bridge on port 8585.
               security.mixed_content.block_active_content: false
               security.mixed_content.block_display_content: false
+              # Odoo 19's PWA shell relies on a Service Worker + IndexedDB for
+              # offline order queueing. Both are enabled by default in Gecko,
+              # but set explicitly so offline support keeps working regardless
+              # of upstream default changes.
+              dom.serviceWorkers.enabled: true
+              dom.indexedDB.enabled: true
             """.trimIndent()
         )
         return config
