@@ -9,8 +9,7 @@ import com.nightpos.app.print.PrintHttpServer
 import com.nightpos.app.print.PrintServiceEnabler
 import com.nightpos.app.print.SunmiJsBridge
 import com.nightpos.app.print.SunmiPrinterConnection
-import org.mozilla.geckoview.GeckoRuntime
-import org.mozilla.geckoview.GeckoRuntimeSettings
+import com.nightpos.app.webview.GeckoRuntimeHolder
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -18,8 +17,6 @@ import java.util.concurrent.TimeUnit
 class NightPOSApplication : Application() {
 
     companion object {
-        lateinit var geckoRuntime: GeckoRuntime
-            private set
         lateinit var printerConnection: SunmiPrinterConnection
             private set
         lateinit var jsBridge: SunmiJsBridge
@@ -49,22 +46,14 @@ class NightPOSApplication : Application() {
         clearGeckoStartupCache()
 
         val configFile = writeGeckoConfig()
-        geckoRuntime = GeckoRuntime.create(
-            this,
-            GeckoRuntimeSettings.Builder()
-                .javaScriptEnabled(true)
-                .remoteDebuggingEnabled(false)
-                .consoleOutput(true)
-                .configFilePath(configFile.absolutePath)
-                .build(),
-        )
+        GeckoRuntimeHolder.init(this, configFile.absolutePath)
 
         // Install built-in extension that polyfills Promise.withResolvers (Firefox 121)
         // and structuredClone (Firefox 94) — required by Odoo 19 on GeckoView 99.
         // Block until the extension is confirmed installed so the content script fires
         // at document_start on the very first page load (no timing race).
         val polyfillLatch = CountDownLatch(1)
-        geckoRuntime.webExtensionController
+        GeckoRuntimeHolder.runtime.webExtensionController
             .ensureBuiltIn("resource://android/assets/extensions/polyfill/", "polyfill@nightpos")
             .accept(
                 { Log.i("NightPOS", "Polyfill extension installed"); polyfillLatch.countDown() },
@@ -80,10 +69,6 @@ class NightPOSApplication : Application() {
     }
 
     private fun clearGeckoStartupCache() {
-        // GeckoView caches web-extension bytecode in startupCache/webext.sc.lz4.
-        // If we update content.js but this cache is stale, the old script runs.
-        // Only wipe the cache when the extension manifest version actually changed
-        // so we don't slow down every startup by forcing Gecko to rebuild it.
         runCatching {
             val prefs = getSharedPreferences("nightpos_ext", MODE_PRIVATE)
             val storedVersion = prefs.getString("ext_version", null)

@@ -1,6 +1,6 @@
 package com.nightpos.app.data
 
-import com.nightpos.app.NightPOSApplication
+import com.nightpos.app.webview.GeckoRuntimeHolder
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.StorageController
 
@@ -12,7 +12,7 @@ class SessionManager {
 
     suspend fun clearSession(session: GeckoSession?) {
         runCatching {
-            NightPOSApplication.geckoRuntime.storageController.clearData(
+            GeckoRuntimeHolder.runtime.storageController.clearData(
                 StorageController.ClearFlags.ALL
             )
         }

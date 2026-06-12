@@ -17,6 +17,7 @@ import androidx.navigation.navArgument
 import com.nightpos.app.AppContainer
 import com.nightpos.app.NightPOSApplication
 import com.nightpos.app.R
+import com.nightpos.app.webview.GeckoRuntimeHolder
 import com.nightpos.app.ui.screens.dashboard.DashboardAction
 import com.nightpos.app.ui.screens.dashboard.DashboardScreen
 import com.nightpos.app.ui.screens.dashboard.DashboardViewModel
@@ -61,7 +62,7 @@ fun NightPOSNavHost(
         // Ensure the prompt delegate is wired so posConfigs messages are received
         session.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
         if (!session.isOpen) {
-            session.open(NightPOSApplication.geckoRuntime)
+            session.open(GeckoRuntimeHolder.runtime)
         }
         // A lightweight page load — pos-configs.js content script will fetch
         // /web/dataset/call_kw, parse pos.config records and emit to the bridge

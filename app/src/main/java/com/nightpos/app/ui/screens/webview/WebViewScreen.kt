@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.nightpos.app.NightPOSApplication
 import com.nightpos.app.R
+import com.nightpos.app.webview.GeckoRuntimeHolder
 import com.nightpos.app.ui.navigation.WebViewKind
 import com.nightpos.app.ui.screens.offline.OfflineScreen
 import com.nightpos.app.ui.theme.ErrorRed
@@ -112,7 +113,7 @@ fun WebViewScreen(
     // GeckoView content processes until GeckoView is actually needed.
     LaunchedEffect(session) {
         if (session != null && !session.isOpen) {
-            session.open(NightPOSApplication.geckoRuntime)
+            session.open(GeckoRuntimeHolder.runtime)
         }
     }
 
