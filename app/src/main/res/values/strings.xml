@@ -75,6 +75,9 @@
     <string name="settings_auto_reopen_pos">เปิดหน้าขายอัตโนมัติ</string>
     <string name="settings_auto_reopen_pos_desc">เปิดหน้าขายขึ้นใหม่ทันทีหากถูกปิดโดยไม่ตั้งใจ (โหมดคีออสก์)</string>
 
+    <string name="settings_auto_startup">เปิดแอปอัตโนมัติเมื่อบูต</string>
+    <string name="settings_auto_startup_desc">เปิด NightPOS ขึ้นมาโดยอัตโนมัติเมื่อเปิดเครื่อง</string>
+
     <string name="settings_clear_data">ล้างข้อมูลแคชและคุกกี้</string>
     <string name="settings_clear_data_desc">ลบข้อมูลที่เก็บไว้ของ WebView ทั้งหมด</string>
     <string name="settings_clear_data_success">ล้างข้อมูลเรียบร้อยแล้ว</string>

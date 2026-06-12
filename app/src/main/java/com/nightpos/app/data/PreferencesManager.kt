@@ -24,6 +24,7 @@ class PreferencesManager(private val context: Context) {
         val KIOSK_MODE = booleanPreferencesKey("kiosk_mode")
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val AUTO_REOPEN_POS = booleanPreferencesKey("auto_reopen_pos")
+        val AUTO_STARTUP = booleanPreferencesKey("auto_startup")
         val PRINTER_PAPER_WIDTH_MM = intPreferencesKey("printer_paper_width_mm")
     }
 
@@ -41,6 +42,10 @@ class PreferencesManager(private val context: Context) {
 
     val autoReopenPosEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[Keys.AUTO_REOPEN_POS] ?: false
+    }
+
+    val autoStartupEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.AUTO_STARTUP] ?: false
     }
 
     val printerPaperWidthMm: Flow<Int> = context.dataStore.data.map { prefs ->
@@ -61,6 +66,10 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun setAutoReopenPosEnabled(enabled: Boolean) {
         context.dataStore.edit { it[Keys.AUTO_REOPEN_POS] = enabled }
+    }
+
+    suspend fun setAutoStartupEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.AUTO_STARTUP] = enabled }
     }
 
     suspend fun setPrinterPaperWidthMm(widthMm: Int) {

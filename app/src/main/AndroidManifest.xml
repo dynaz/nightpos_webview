@@ -37,6 +37,9 @@
     <!-- Keep screen on while POS is active -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Auto-launch on device boot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:name=".NightPOSApplication"
         android:allowBackup="true"
@@ -114,6 +117,17 @@
                 android:name="android.printservice"
                 android:resource="@xml/sunmi_print_service" />
         </service>
+
+        <!-- Starts the app on device boot when the user has enabled auto-startup -->
+        <receiver
+            android:name=".receiver.BootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
 
         <!-- FileProvider for WebView file uploads / downloads -->
         <provider

@@ -19,6 +19,7 @@ data class SettingsUiState(
     val kioskModeEnabled: Boolean = false,
     val keepScreenOnEnabled: Boolean = true,
     val autoReopenPosEnabled: Boolean = false,
+    val autoStartupEnabled: Boolean = false,
     val printerPaperWidthMm: Int = 58,
     val isClearingData: Boolean = false,
     val clearDataMessage: String? = null,
@@ -46,6 +47,8 @@ class SettingsViewModel(
             autoReopenPosEnabled = autoReopen,
             printerPaperWidthMm = paperWidth,
         )
+    }.combine(preferencesManager.autoStartupEnabled) { state, autoStartup ->
+        state.copy(autoStartupEnabled = autoStartup)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     fun setServerUrl(url: String) = viewModelScope.launch {
@@ -64,6 +67,10 @@ class SettingsViewModel(
 
     fun setAutoReopenPosEnabled(enabled: Boolean) = viewModelScope.launch {
         preferencesManager.setAutoReopenPosEnabled(enabled)
+    }
+
+    fun setAutoStartupEnabled(enabled: Boolean) = viewModelScope.launch {
+        preferencesManager.setAutoStartupEnabled(enabled)
     }
 
     fun setPrinterPaperWidthMm(widthMm: Int) = viewModelScope.launch {

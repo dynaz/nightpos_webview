@@ -198,6 +198,15 @@ fun SettingsScreen(
 
             item { LanguageRow() }
 
+            item {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_auto_startup),
+                    description = stringResource(R.string.settings_auto_startup_desc),
+                    checked = uiState.autoStartupEnabled,
+                    onCheckedChange = viewModel::setAutoStartupEnabled,
+                )
+            }
+
             item { SectionHeader(stringResource(R.string.settings_section_about)) }
 
             item { AboutRow() }
