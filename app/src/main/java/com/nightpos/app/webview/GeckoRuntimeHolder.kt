@@ -1,7 +1,6 @@
 package com.nightpos.app.webview
 
 import android.content.Context
-import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
 
@@ -41,22 +40,9 @@ object GeckoRuntimeHolder {
                     .remoteDebuggingEnabled(false)
                     .consoleOutput(true)
                     .configFilePath(configFilePath)
-                    // Use dark color scheme to match NightPOS theme
                     .preferredColorScheme(GeckoRuntimeSettings.COLOR_SCHEME_DARK)
                     .build(),
-            ).also { rt ->
-                // This is an internal POS app on a private network — disable all
-                // privacy/security scanning features that add latency or block
-                // legitimate Odoo resources.
-                // ContentBlocking.Settings uses fluent setters (return `this`),
-                // so Kotlin property syntax is unavailable — call as methods.
-                rt.settings.contentBlocking
-                    .antiTracking(ContentBlocking.AntiTracking.NONE)
-                    .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_ALL)
-                    .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.NONE)
-                    .safeBrowsing(ContentBlocking.SafeBrowsing.NONE)
-                    .strictSocialTrackingProtection(false)
-            }
+            )
         }
     }
 }
