@@ -92,13 +92,43 @@ class NightPOSApplication : Application() {
             """
             ---
             prefs:
+              # Sandbox — required on Sunmi kernel 3.10 (SELinux blocks IPC ioctl)
               security.sandbox.content.level: 0
               security.sandbox.content.syscall_whitelist: ""
-              # Allow HTTPS pages to fetch http://localhost — Firefox blocks this
-              # as mixed content by default (Chrome has a localhost exemption).
+
+              # Mixed content — allow HTTPS pages to fetch http://localhost
+              # (Chrome has a localhost exemption; Firefox does not by default)
               # Required for the Sunmi printer HTTP bridge on port 8585.
               security.mixed_content.block_active_content: false
               security.mixed_content.block_display_content: false
+
+              # Safe Browsing — disable Google URL lookups (internal POS, no need)
+              browser.safebrowsing.enabled: false
+              browser.safebrowsing.downloads.enabled: false
+              browser.safebrowsing.malware.enabled: false
+              browser.safebrowsing.phishing.enabled: false
+              browser.safebrowsing.blockedURIs.enabled: false
+
+              # Tracking Protection — off so Odoo's own XHR/analytics are not blocked
+              privacy.trackingprotection.enabled: false
+              privacy.trackingprotection.pbmode.enabled: false
+              privacy.trackingprotection.socialtracking.enabled: false
+              privacy.trackingprotection.cryptomining.enabled: false
+              privacy.trackingprotection.fingerprinting.enabled: false
+
+              # Cookie policy — accept all (Odoo session depends on first-party cookies)
+              network.cookie.cookieBehavior: 0
+
+              # Performance — disable speculative/prefetch network activity
+              network.dns.disablePrefetch: true
+              network.prefetch-next: false
+              network.http.speculative-parallel-limit: 0
+
+              # Telemetry — disable all data collection
+              toolkit.telemetry.enabled: false
+              toolkit.telemetry.unified: false
+              datareporting.healthreport.uploadEnabled: false
+              datareporting.policy.dataSubmissionEnabled: false
             """.trimIndent()
         )
         return config
