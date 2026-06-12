@@ -28,8 +28,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Compute APK name
         id: apk
@@ -41,27 +41,15 @@ jobs:
 
       - name: Rename APK
         run: |
-          mv app/build/outputs/apk/debug/app-debug.apk \
-             "app/build/outputs/apk/debug/${{ steps.apk.outputs.name }}.apk"
-
-      - name: Build release AAB (for Play Store upload)
-        run: ./gradlew bundleRelease --no-daemon
+          mv app/build/outputs/apk/release/app-release.apk \
+             "app/build/outputs/apk/release/${{ steps.apk.outputs.name }}.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
-        # Actions artifact storage is a separate quota from release assets below;
-        # don't let it block the release step when that quota is exhausted.
         continue-on-error: true
         with:
           name: ${{ steps.apk.outputs.name }}
-          path: app/build/outputs/apk/debug/*.apk
-
-      - name: Upload AAB artifact
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
-        with:
-          name: nightpos-release-aab
-          path: app/build/outputs/bundle/release/*.aab
+          path: app/build/outputs/apk/release/*.apk
 
       - name: Compute release tag
         id: reltag
