@@ -3,8 +3,6 @@ package com.nightpos.app
 import android.app.ActivityManager
 import android.app.Application
 import android.content.ComponentCallbacks2
-import android.content.Context
-import android.os.Process
 import android.util.Log
 import com.nightpos.app.print.PrintHttpServer
 import com.nightpos.app.print.PrintServiceEnabler
@@ -144,9 +142,11 @@ class NightPOSApplication : Application() {
     }
 
     private fun isMainProcess(): Boolean {
-        val pid = Process.myPid()
-        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return am.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName == packageName
+        // Application.getProcessName() is reliable (API 28+, minSdk=30).
+        // ActivityManager.getRunningAppProcesses() can return null on some Sunmi
+        // kernels, causing this check to wrongly return false for the main process
+        // and leaving GeckoRuntime / jsBridge uninitialised.
+        return getProcessName() == packageName
     }
 
     private fun clearGeckoStartupCache() {
