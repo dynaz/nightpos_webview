@@ -2,6 +2,7 @@ package com.nightpos.app
 
 import android.app.ActivityManager
 import android.app.Application
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.os.Process
 import android.util.Log
@@ -10,11 +11,20 @@ import com.nightpos.app.print.PrintServiceEnabler
 import com.nightpos.app.print.SunmiJsBridge
 import com.nightpos.app.print.SunmiPrinterConnection
 import com.nightpos.app.webview.GeckoRuntimeHolder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import org.mozilla.geckoview.StorageController
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class NightPOSApplication : Application() {
+
+    // Process-scoped scope for fire-and-forget background tasks (cache clearing).
+    // SupervisorJob so a failed child never cancels the other children.
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         lateinit var printerConnection: SunmiPrinterConnection
@@ -60,6 +70,77 @@ class NightPOSApplication : Application() {
                 { e -> Log.w("NightPOS", "Polyfill extension error: ${e?.message}"); polyfillLatch.countDown() },
             )
         polyfillLatch.await(3, TimeUnit.SECONDS)
+    }
+
+    // ── Memory management ─────────────────────────────────────────────────────
+
+    /**
+     * Called by the OS whenever it needs the app to release memory.
+     * Levels most relevant to a foreground POS device (2 GB RAM):
+     *
+     *   RUNNING_LOW (10)      — still foreground but memory is getting tight
+     *   RUNNING_CRITICAL (15) — OS may kill background processes; free caches now
+     *   UI_HIDDEN (20)        — app went to background (unlikely for a kiosk)
+     *   MODERATE / COMPLETE   — deep background — clear everything disposable
+     */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (!GeckoRuntimeHolder.isInitialised) return
+
+        val memInfo = ActivityManager.MemoryInfo().also {
+            (getSystemService(ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(it)
+        }
+        val availMb = memInfo.availMem / (1024 * 1024)
+
+        when {
+            level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> {
+                // Foreground but critically low — clear HTTP + image cache
+                releaseGeckoCaches(
+                    StorageController.ClearFlags.NETWORK_CACHE or
+                    StorageController.ClearFlags.IMAGE_CACHE
+                )
+                Log.w("NightPOS/Memory", "TRIM_MEMORY level=$level availMb=$availMb — cleared network+image cache")
+            }
+            level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> {
+                // Moderately low — image cache only (cheapest to re-build)
+                releaseGeckoCaches(StorageController.ClearFlags.IMAGE_CACHE)
+                Log.i("NightPOS/Memory", "TRIM_MEMORY level=$level availMb=$availMb — cleared image cache")
+            }
+            level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN -> {
+                // App moved to background — clear both caches
+                releaseGeckoCaches(
+                    StorageController.ClearFlags.NETWORK_CACHE or
+                    StorageController.ClearFlags.IMAGE_CACHE
+                )
+                Log.i("NightPOS/Memory", "TRIM_MEMORY level=$level availMb=$availMb — UI hidden, cleared caches")
+            }
+        }
+    }
+
+    /** Fallback for pre-API-14 low-memory signal (treated as CRITICAL). */
+    override fun onLowMemory() {
+        super.onLowMemory()
+        if (!GeckoRuntimeHolder.isInitialised) return
+        releaseGeckoCaches(
+            StorageController.ClearFlags.NETWORK_CACHE or
+            StorageController.ClearFlags.IMAGE_CACHE
+        )
+        Log.w("NightPOS/Memory", "onLowMemory — cleared network+image cache")
+    }
+
+    /**
+     * Clears GeckoView caches identified by [flags] on the IO thread.
+     * Only NETWORK_CACHE and IMAGE_CACHE are used — never COOKIES or
+     * DOM_STORAGES, which would destroy the Odoo session and IndexedDB data.
+     */
+    private fun releaseGeckoCaches(flags: Int) {
+        appScope.launch {
+            runCatching {
+                GeckoRuntimeHolder.runtime.storageController.clearData(flags)
+            }.onFailure {
+                Log.e("NightPOS/Memory", "releaseGeckoCaches failed: ${it.message}")
+            }
+        }
     }
 
     private fun isMainProcess(): Boolean {

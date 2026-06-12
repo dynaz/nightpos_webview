@@ -1,6 +1,8 @@
 package com.nightpos.app
 
+import android.content.ComponentCallbacks2
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -98,6 +100,16 @@ class MainActivity : ComponentActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) hideSystemBars()
+    }
+
+    // Re-apply immersive mode on trim — low-memory dialogs (OOM dialog, etc.)
+    // can cause the system bars to reappear and not re-hide automatically.
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            Log.w("NightPOS/Memory", "MainActivity.onTrimMemory level=$level")
+            hideSystemBars()
+        }
     }
 
     private fun hideSystemBars() {
