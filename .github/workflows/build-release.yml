@@ -58,8 +58,9 @@ jobs:
         run: |
           VERSION=$(grep 'versionName\s*=' app/build.gradle.kts \
             | grep -v 'Suffix' | grep -o '"[^"]*"' | tr -d '"' | head -1)
+          BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
           SHORT_SHA=$(git rev-parse --short HEAD)
-          echo "name=nightpos-${VERSION}-debug-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "name=nightpos-${VERSION}-${BRANCH}-debug-${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       - name: Rename APK
         run: |
@@ -93,8 +94,9 @@ jobs:
           else
             VERSION=$(grep 'versionName\s*=' app/build.gradle.kts \
               | grep -v 'Suffix' | grep -o '"[^"]*"' | tr -d '"' | head -1)
+            BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
             SHORT_SHA=$(git rev-parse --short HEAD)
-            echo "tag=build-${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "tag=build-${VERSION}-${BRANCH}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create GitHub Release
