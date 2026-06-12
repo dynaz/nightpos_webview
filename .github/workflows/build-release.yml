@@ -37,7 +37,7 @@ jobs:
           VERSION=$(grep 'versionName\s*=' app/build.gradle.kts \
             | grep -v 'Suffix' | grep -o '"[^"]*"' | tr -d '"' | head -1)
           SHORT_SHA=$(git rev-parse --short HEAD)
-          echo "name=nightpos-${VERSION}-debug-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "name=nightpos-${VERSION}-fullscreen-autostart-${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       - name: Rename APK
         run: |
