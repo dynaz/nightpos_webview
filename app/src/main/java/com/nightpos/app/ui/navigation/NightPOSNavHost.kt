@@ -181,6 +181,7 @@ fun NightPOSNavHost(
                 onExit = {
                     navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
                 },
+                onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
             )
         }
 
@@ -213,6 +214,7 @@ fun NightPOSNavHost(
                 onExit = {
                     navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
                 },
+                onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
             )
         }
 
