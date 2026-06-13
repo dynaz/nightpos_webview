@@ -67,6 +67,7 @@
 
     <string name="settings_server_url">ที่อยู่เซิร์ฟเวอร์ POS</string>
     <string name="settings_server_url_desc">ที่อยู่ของระบบ Odoo POS ที่เชื่อมต่อ</string>
+    <string name="settings_database_name">ฐานข้อมูล: %1$s</string>
 
     <string name="settings_kiosk_mode">โหมดคีออสก์ (Kiosk Mode)</string>
     <string name="settings_kiosk_mode_desc">ซ่อนแถบระบบและล็อกหน้าจอขณะใช้งานหน้าขาย</string>

@@ -29,7 +29,7 @@ class AppContainer(context: Context) {
     }
 
     fun settingsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
-        initializer { SettingsViewModel(preferencesManager, sessionManager) }
+        initializer { SettingsViewModel(preferencesManager, sessionManager, odooAuthClient) }
     }
 
     fun webViewViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {

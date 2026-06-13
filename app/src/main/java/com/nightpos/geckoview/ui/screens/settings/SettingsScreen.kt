@@ -139,6 +139,7 @@ fun SettingsScreen(
             item {
                 ServerUrlEditor(
                     currentUrl = uiState.serverUrl,
+                    databaseName = uiState.databaseName,
                     onSave = viewModel::setServerUrl,
                 )
             }
@@ -237,7 +238,7 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun ServerUrlEditor(currentUrl: String, onSave: (String) -> Unit) {
+private fun ServerUrlEditor(currentUrl: String, databaseName: String, onSave: (String) -> Unit) {
     var text by remember(currentUrl) { mutableStateOf(currentUrl) }
     val isDirty = text.trim().trimEnd('/') != currentUrl.trim().trimEnd('/')
 
@@ -260,6 +261,14 @@ private fun ServerUrlEditor(currentUrl: String, onSave: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             label = { Text("https://soho.nightpos.com") },
         )
+        if (!isDirty && databaseName.isNotBlank()) {
+            Text(
+                text = stringResource(R.string.settings_database_name, databaseName),
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
         if (isDirty) {
             Row(
                 modifier = Modifier

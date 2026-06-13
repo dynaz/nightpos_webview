@@ -3,6 +3,7 @@ package com.nightpos.geckoview.ui.screens.settings
 import org.mozilla.geckoview.GeckoSession
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nightpos.geckoview.data.OdooAuthClient
 import com.nightpos.geckoview.data.PreferencesManager
 import com.nightpos.geckoview.data.SessionManager
 import com.nightpos.geckoview.util.Constants
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 
 data class SettingsUiState(
     val serverUrl: String = Constants.DEFAULT_BASE_URL,
+    val databaseName: String = "",
     val kioskModeEnabled: Boolean = false,
     val keepScreenOnEnabled: Boolean = true,
     val autoReopenPosEnabled: Boolean = false,
@@ -27,12 +29,15 @@ data class SettingsUiState(
 class SettingsViewModel(
     private val preferencesManager: PreferencesManager,
     private val sessionManager: SessionManager,
+    private val odooAuthClient: OdooAuthClient,
 ) : ViewModel() {
 
     private val _events = MutableStateFlow<SettingsEvent?>(null)
     val events: StateFlow<SettingsEvent?> = _events.asStateFlow()
 
-    val uiState: StateFlow<SettingsUiState> = combine(
+    private val _databaseName = MutableStateFlow("")
+
+    private val baseSettings: StateFlow<SettingsUiState> = combine(
         preferencesManager.serverUrl,
         preferencesManager.kioskModeEnabled,
         preferencesManager.keepScreenOnEnabled,
@@ -47,6 +52,21 @@ class SettingsViewModel(
             printerPaperWidthMm = paperWidth,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
+
+    val uiState: StateFlow<SettingsUiState> = combine(
+        baseSettings,
+        _databaseName,
+    ) { state, databaseName ->
+        state.copy(databaseName = databaseName)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
+
+    init {
+        viewModelScope.launch {
+            preferencesManager.serverUrl.collect { url ->
+                _databaseName.value = runCatching { odooAuthClient.resolveDatabase(url) }.getOrDefault("")
+            }
+        }
+    }
 
     fun setServerUrl(url: String) = viewModelScope.launch {
         preferencesManager.setServerUrl(url)

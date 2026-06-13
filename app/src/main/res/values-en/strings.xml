@@ -67,6 +67,7 @@
 
     <string name="settings_server_url">POS Server Address</string>
     <string name="settings_server_url_desc">The address of the connected Odoo POS system</string>
+    <string name="settings_database_name">Database: %1$s</string>
 
     <string name="settings_kiosk_mode">Kiosk Mode</string>
     <string name="settings_kiosk_mode_desc">Hide the system bars and lock the screen while using the POS screen</string>

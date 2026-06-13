@@ -80,16 +80,18 @@ class OdooAuthClient {
     /**
      * Resolves the database name for [baseUrl]: asks `/web/database/list` and uses its result
      * when exactly one database is listed, otherwise falls back to the server's hostname
-     * (this single-tenant deployment names its database after the URL).
+     * (this single-tenant deployment names its database after the URL). Also used by the
+     * Settings screen to show which database a given server URL resolves to.
      */
-    private suspend fun resolveDatabase(baseUrl: String): String {
+    suspend fun resolveDatabase(baseUrl: String): String = withContext(Dispatchers.IO) {
         val listed = runCatching { rpcCall(baseUrl, "/web/database/list", JSONObject()) }
             .getOrNull()
             ?.optJSONArray("result")
         if (listed != null && listed.length() == 1) {
-            return listed.getString(0)
+            listed.getString(0)
+        } else {
+            URI(baseUrl).host.orEmpty()
         }
-        return URI(baseUrl).host.orEmpty()
     }
 
     private suspend fun rpcCall(baseUrl: String, path: String, params: JSONObject): JSONObject? {
