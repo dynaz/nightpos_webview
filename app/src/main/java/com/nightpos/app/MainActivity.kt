@@ -97,12 +97,14 @@ class MainActivity : ComponentActivity() {
         // Tell Gecko the session isn't visible so it can release compositor /
         // rendering surface memory while backgrounded — content (incl. the
         // service worker session) stays alive for a fast resume.
-        geckoSession?.setActive(false)
+        // setActive() throws if the session isn't open yet (e.g. a pause
+        // happening before WebViewScreen's session.open() has run).
+        geckoSession?.takeIf { it.isOpen }?.setActive(false)
     }
 
     override fun onResume() {
         super.onResume()
-        geckoSession?.setActive(true)
+        geckoSession?.takeIf { it.isOpen }?.setActive(true)
     }
 
     override fun onDestroy() {
