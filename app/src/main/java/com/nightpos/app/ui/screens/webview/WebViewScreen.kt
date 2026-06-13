@@ -4,8 +4,6 @@ import android.app.Activity
 import android.view.ViewGroup
 import android.view.Window
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,20 +32,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.nightpos.app.NightPOSApplication
 import com.nightpos.app.R
@@ -58,7 +48,6 @@ import com.nightpos.app.ui.theme.NeonPurple
 import com.nightpos.app.ui.theme.NightBlack
 import com.nightpos.app.webview.GeckoNavigationDelegate
 import com.nightpos.app.webview.GeckoProgressDelegate
-import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,26 +94,13 @@ fun WebViewScreen(
         )
     }
 
-    // Tracks the page's vertical scroll offset so the pull-to-refresh gesture below
-    // only triggers a reload when the user is already at the top of the page.
-    var pageScrollY by remember { mutableStateOf(0) }
-    val scrollDelegate = remember(kind) {
-        object : GeckoSession.ScrollDelegate {
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
-                pageScrollY = scrollY
-            }
-        }
-    }
-
-    DisposableEffect(session, navigationDelegate, progressDelegate, scrollDelegate) {
+    DisposableEffect(session, navigationDelegate, progressDelegate) {
         session?.navigationDelegate = navigationDelegate
         session?.progressDelegate = progressDelegate
-        session?.scrollDelegate = scrollDelegate
         session?.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
         onDispose {
             session?.navigationDelegate = null
             session?.progressDelegate = null
-            session?.scrollDelegate = null
             // Keep the prompt delegate alive so pos-configs.js can still report
             // outlet names even after leaving the WebView screen (the singleton
             // bridge never changes, so re-assigning is safe and always correct).
@@ -205,18 +181,6 @@ fun WebViewScreen(
                                 },
                                 modifier = Modifier.fillMaxSize(),
                             )
-
-                            // GeckoView consumes touch events itself for panning/zooming and
-                            // never participates in Compose's nested-scroll protocol, so
-                            // PullToRefreshBox alone never sees the drag. This overlay watches
-                            // pointer events without consuming them and reloads the page when
-                            // the user drags down from the top of the content.
-                            PullToReloadDetector(
-                                enabled = !uiState.isLoading,
-                                isAtTop = { pageScrollY <= 0 },
-                                onRefresh = { session?.reload() },
-                                modifier = Modifier.fillMaxSize(),
-                            )
                         }
                     }
                 }
@@ -276,43 +240,6 @@ private fun WebViewTopBar(title: String, onBack: () -> Unit, onReload: () -> Uni
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = NightBlack),
     )
-}
-
-/**
- * Watches pointer events without consuming them and invokes [onRefresh] once per
- * gesture when the user drags down from the top of the page by more than
- * [triggerDistance]. Runs in [PointerEventPass.Initial] so it observes the gesture
- * before GeckoView consumes it for its own pan/zoom handling.
- */
-@Composable
-private fun PullToReloadDetector(
-    enabled: Boolean,
-    isAtTop: () -> Boolean,
-    onRefresh: () -> Unit,
-    modifier: Modifier = Modifier,
-    triggerDistance: Dp = 96.dp,
-) {
-    val triggerPx = with(LocalDensity.current) { triggerDistance.toPx() }
-    Box(
-        modifier = modifier.pointerInput(enabled) {
-            if (!enabled) return@pointerInput
-            awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                var dragged = 0f
-                var triggered = false
-                while (true) {
-                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
-                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                    if (!change.pressed) break
-                    dragged += change.positionChange().y
-                    if (!triggered && isAtTop() && dragged > triggerPx) {
-                        triggered = true
-                        onRefresh()
-                    }
-                }
-            }
-        },
-    ) {}
 }
 
 @Composable
