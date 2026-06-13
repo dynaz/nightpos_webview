@@ -92,6 +92,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        // Tell Gecko the session isn't visible so it can release compositor /
+        // rendering surface memory while backgrounded — content (incl. the
+        // service worker session) stays alive for a fast resume.
+        geckoSession?.setActive(false)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        geckoSession?.setActive(true)
+    }
+
     override fun onDestroy() {
         geckoSession?.close()
         geckoSession = null
