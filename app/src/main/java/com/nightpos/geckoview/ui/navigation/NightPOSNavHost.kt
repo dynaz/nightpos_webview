@@ -224,6 +224,9 @@ fun NightPOSNavHost(
                 onHome = {
                     navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
                 },
+                onPrinter = {
+                    navController.navigate(NightPOSDestination.WebViewDest.routeFor(WebViewKind.PRINTERS))
+                },
                 onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
             )
         }
@@ -261,6 +264,9 @@ fun NightPOSNavHost(
                 },
                 onHome = {
                     navController.popBackStack()
+                },
+                onPrinter = {
+                    navController.navigate(NightPOSDestination.WebViewDest.routeFor(WebViewKind.PRINTERS))
                 },
                 onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
             )

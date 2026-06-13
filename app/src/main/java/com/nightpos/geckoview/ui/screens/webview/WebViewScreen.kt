@@ -11,8 +11,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,11 +45,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.nightpos.geckoview.NightPOSApplication
 import com.nightpos.geckoview.R
 import com.nightpos.geckoview.ui.navigation.WebViewKind
 import com.nightpos.geckoview.ui.screens.offline.OfflineScreen
 import com.nightpos.geckoview.ui.theme.ErrorRed
+import com.nightpos.geckoview.ui.theme.NeonCyan
 import com.nightpos.geckoview.ui.theme.NeonPurple
 import com.nightpos.geckoview.ui.theme.NightBlack
 import com.nightpos.geckoview.webview.GeckoNavigationDelegate
@@ -64,6 +76,7 @@ fun WebViewScreen(
     keepScreenOnEnabled: Boolean,
     onExit: () -> Unit,
     onHome: () -> Unit,
+    onPrinter: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -158,6 +171,7 @@ fun WebViewScreen(
                         },
                         onReload = { session?.reload() },
                         onHome = onHome,
+                        onPrinter = onPrinter,
                         onSettings = onOpenSettings,
                     )
                 }
@@ -218,10 +232,17 @@ private fun WebViewTopBar(
     onBack: () -> Unit,
     onReload: () -> Unit,
     onHome: () -> Unit,
+    onPrinter: () -> Unit,
     onSettings: () -> Unit,
 ) {
     TopAppBar(
-        title = { Text(title, color = MaterialTheme.colorScheme.onBackground) },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                DigitalClock()
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(title, color = MaterialTheme.colorScheme.onBackground)
+            }
+        },
         navigationIcon = {
             IconButton(onClick = onHome) {
                 Icon(
@@ -232,6 +253,13 @@ private fun WebViewTopBar(
             }
         },
         actions = {
+            IconButton(onClick = onPrinter) {
+                Icon(
+                    Icons.Filled.Print,
+                    contentDescription = "Printers",
+                    tint = NeonCyan,
+                )
+            }
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
@@ -255,6 +283,25 @@ private fun WebViewTopBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = NightBlack),
+    )
+}
+
+private val subPageClockFormatter = SimpleDateFormat("HH:mm:ss", Locale.US)
+
+@Composable
+private fun DigitalClock() {
+    var time by remember { mutableStateOf(subPageClockFormatter.format(Date())) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1_000)
+            time = subPageClockFormatter.format(Date())
+        }
+    }
+    Text(
+        text = time,
+        style = MaterialTheme.typography.titleMedium,
+        color = NeonCyan,
+        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
     )
 }
 
