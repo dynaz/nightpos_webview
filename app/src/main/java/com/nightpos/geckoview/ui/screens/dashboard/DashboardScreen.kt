@@ -57,8 +57,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.nightpos.geckoview.R
 import com.nightpos.geckoview.ui.components.FALLBACK_OUTLETS
 import com.nightpos.geckoview.ui.components.MenuCard
@@ -334,15 +335,16 @@ private fun DashboardHeader(onLogoClick: () -> Unit, userName: String) {
     }
 }
 
-private val clockFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+// SimpleDateFormat is used (not java.time) so this works on API 21+ (Sunmi D2s = API 25).
+private val clockFormatter = SimpleDateFormat("HH:mm:ss", Locale.US)
 
 @Composable
 private fun DigitalClock() {
-    var time by remember { mutableStateOf(LocalTime.now().format(clockFormatter)) }
+    var time by remember { mutableStateOf(clockFormatter.format(Date())) }
     LaunchedEffect(Unit) {
         while (true) {
             delay(1_000)
-            time = LocalTime.now().format(clockFormatter)
+            time = clockFormatter.format(Date())
         }
     }
     Text(
