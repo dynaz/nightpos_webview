@@ -3,6 +3,7 @@ package com.nightpos.geckoview
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import android.os.Process
 import android.util.Log
 import com.nightpos.geckoview.print.PrintHttpServer
@@ -94,9 +95,15 @@ class NightPOSApplication : Application() {
     }
 
     private fun isMainProcess(): Boolean {
-        val pid = Process.myPid()
-        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return am.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName == packageName
+        // API 28+ exposes Application.getProcessName() which is reliable even when
+        // ActivityManager.getRunningAppProcesses() returns null (e.g. some OEM kernels).
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getProcessName() == packageName
+        } else {
+            val pid = Process.myPid()
+            val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            am.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName == packageName
+        }
     }
 
     private fun clearGeckoStartupCache() {

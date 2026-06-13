@@ -10,19 +10,18 @@ android {
 
     defaultConfig {
         applicationId = "com.nightpos.geckoview"
-        // 21 = Android 5.0 — GeckoView 142 supports API 21+.
-        // Sunmi D2s runs Android 7.1.2 (API 25), well above this floor.
-        // GeckoView 143+ raised minSdk to 26, so 142 is the highest version for D2s.
-        minSdk = 21
+        // Android 15 (API 35) target branch.
+        // GeckoView 143+ requires minSdk 26; targeting modern 64-bit Android 15 devices.
+        minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "2.0.12"
+        versionCode = 1
+        versionName = "3.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
-        buildConfigField("String", "GECKOVIEW_VERSION", "\"142.0\"")
+        buildConfigField("String", "GECKOVIEW_VERSION", "\"151.0\"")
     }
 
     signingConfigs {
@@ -94,11 +93,9 @@ dependencies {
     implementation(libs.androidbrowserhelper)
     implementation(libs.androidx.appcompat)
     implementation(libs.sunmi.printerlibrary)
-    // 32-bit ARM variant — Sunmi D2s is armeabi-v7a, Android 7.1.2 (API 25).
-    // v142 is the highest GeckoView that supports API 21+ (v143+ raised floor to API 26).
-    // Firefox 130+ added 'camera' to navigator.permissions.query PermissionName enum,
-    // fixing the UncaughtPromiseError seen with GeckoView 105.
-    implementation("org.mozilla.geckoview:geckoview-armeabi-v7a:142.0.20250827004350")
+    // 64-bit ARM variant for Android 15 devices.
+    // GeckoView 151 (Firefox 151, built 2026-06-08) — latest stable release.
+    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:151.0.20260608154138")
     // Local HTTP server for printer bridge (avoids SELinux socket-ioctl restriction
     // that prevents GeckoView IPC from working on kernel 3.10 / Android 6.0.1).
     implementation("org.nanohttpd:nanohttpd:2.3.1")

@@ -17,8 +17,8 @@ object GeckoSessionFactory {
             .useTrackingProtection(false)
             .userAgentMode(GeckoSessionSettings.USER_AGENT_MODE_DESKTOP)
             .userAgentOverride(
-                "Mozilla/5.0 (Linux; Android 6.0.1) AppleWebKit/537.36 " +
-                "(KHTML, like Gecko) GeckoView/134.0 Mobile Safari/537.36 NightPOS/1.0"
+                "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 " +
+                "(KHTML, like Gecko) GeckoView/151.0 Mobile Safari/537.36 NightPOS/1.0"
             )
             .build()
         return GeckoSession(settings)
