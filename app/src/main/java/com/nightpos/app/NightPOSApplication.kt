@@ -55,7 +55,10 @@ class NightPOSApplication : Application() {
             GeckoRuntimeSettings.Builder()
                 .javaScriptEnabled(true)
                 .remoteDebuggingEnabled(false)
-                .consoleOutput(true)
+                // Forwarding every JS console message to logcat costs a JNI round trip
+                // per call; Odoo's POS UI logs frequently (barcode scans, sync status).
+                // Keep it for debug builds only.
+                .consoleOutput(BuildConfig.DEBUG)
                 .configFilePath(configFile.absolutePath)
                 .build(),
         )
@@ -137,6 +140,19 @@ class NightPOSApplication : Application() {
               # of upstream default changes.
               dom.serviceWorkers.enabled: true
               dom.indexedDB.enabled: true
+              # Cache Storage API (caches.open/match/put) — what the Odoo 19
+              # service worker uses to serve its JS/CSS app shell instantly on
+              # repeat loads instead of re-fetching from the server.
+              dom.caches.enabled: true
+              # Disable Gecko's "smart" disk-cache sizing (which shrinks the
+              # cache based on free disk space) and set an explicit cap so the
+              # POS's JS/CSS/image bundles stay cached across app restarts
+              # instead of being re-downloaded every time the app is reopened.
+              browser.cache.disk.enable: true
+              browser.cache.disk.smart_size.enabled: false
+              browser.cache.disk.capacity: 262144
+              browser.cache.memory.enable: true
+              browser.cache.memory.capacity: 16384
             """.trimIndent()
         )
         return config
