@@ -6,12 +6,11 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.mozilla.geckoview.GeckoWebExecutor
 import org.mozilla.geckoview.WebRequest
-import org.mozilla.geckoview.WebResponse
-import java.net.URLEncoder
+import java.net.URI
 
-/** Outcome of an Odoo login attempt. */
+/** Outcome of an Odoo `/web/session/authenticate` JSON-RPC call. */
 sealed interface OdooAuthResult {
-    /** Login succeeded; [uid] is the authenticated Odoo user id (-1 if unknown). */
+    /** Login succeeded; [uid] is the authenticated Odoo user id. */
     data class Success(val uid: Int, val login: String, val name: String) : OdooAuthResult
 
     /** The server responded but rejected the credentials (wrong login/password/PIN). */
@@ -22,111 +21,95 @@ sealed interface OdooAuthResult {
 }
 
 /**
- * Minimal Odoo 19 authentication client used by the native Login screen.
+ * Minimal Odoo 19 JSON-RPC client used to authenticate the native Login screen.
  *
- * Submits the same `/web/login` form a browser would, instead of calling the
- * `/web/session/authenticate` JSON-RPC endpoint directly. This matters for
- * single-tenant deployments: Odoo resolves the database from the request's
- * Host header (`db_filter`) for normal `type='http'` routes such as
- * `/web/login`, but the JSON-RPC endpoint requires an explicit `db` and does
- * not fall back to host-based resolution — passing `db: ""` there results in
- * "Database not found" even though the database is selected automatically
- * for `/web/login`.
+ * Resolves the database name automatically (this deployment is single-tenant, one database
+ * per URL): tries `/web/database/list` first and falls back to the server's hostname, which
+ * matches the database name for this deployment's `db_filter`. The previous implementation
+ * passed `db: ""` to `/web/session/authenticate`, which doesn't fall back to host-based
+ * routing the way `/web/login` does, resulting in "Database not found".
  *
  * Uses [GeckoWebExecutor] backed by the shared [NightPOSApplication.geckoRuntime] so the
- * `session_id` cookie set by a successful `/web/login` response lands in the same cookie
- * jar that [org.mozilla.geckoview.GeckoSession.loadUri] uses — the Odoo web/POS UI loaded
- * afterwards is then already authenticated, with no manual cookie handling required.
+ * `session_id` cookie set by a successful `/web/session/authenticate` response lands in
+ * the same cookie jar that [org.mozilla.geckoview.GeckoSession.loadUri] uses — the Odoo
+ * web/POS UI loaded afterwards is then already authenticated, with no manual cookie
+ * handling required.
  */
 class OdooAuthClient {
 
     private val executor by lazy { GeckoWebExecutor(NightPOSApplication.geckoRuntime) }
 
-    /** Authenticates by submitting the standard `/web/login` form, mirroring a browser login. */
-    suspend fun authenticate(baseUrl: String, login: String, password: String): OdooAuthResult =
+    /**
+     * Calls `/web/session/authenticate` with the given credentials. When [isPin] is true,
+     * [password] is sent as `staff_pin` (PIN-based sign-in) instead of `password`.
+     */
+    suspend fun authenticate(baseUrl: String, login: String, password: String, isPin: Boolean): OdooAuthResult =
         withContext(Dispatchers.IO) {
             try {
-                val loginUrl = "${baseUrl.trimEnd('/')}/web/login"
+                val db = resolveDatabase(baseUrl)
 
-                // Fetch the login page first to obtain a fresh session + CSRF token.
-                val loginPage = fetch(loginUrl, "GET")
+                val params = JSONObject().apply {
+                    put("db", db)
+                    put("login", login)
+                    if (isPin) put("staff_pin", password) else put("password", password)
+                }
+
+                val json = rpcCall(baseUrl, "/web/session/authenticate", params)
                     ?: return@withContext OdooAuthResult.NetworkError("No response from server")
 
-                val csrfToken = Regex("""name="csrf_token"\s+value="([^"]+)"""")
-                    .find(loginPage.text)
-                    ?.groupValues
-                    ?.get(1)
-                    ?: return@withContext OdooAuthResult.NetworkError("Could not find CSRF token")
-
-                val formBody = listOf(
-                    "csrf_token" to csrfToken,
-                    "login" to login,
-                    "password" to password,
-                ).joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, "UTF-8")}" }
-
-                val loginResponse = fetch(
-                    url = loginUrl,
-                    method = "POST",
-                    body = formBody,
-                    headers = mapOf("Content-Type" to "application/x-www-form-urlencoded"),
-                ) ?: return@withContext OdooAuthResult.NetworkError("No response from server")
-
-                val success = loginResponse.statusCode in 300..399 ||
-                    (loginResponse.redirected && !loginResponse.uri.contains("/web/login"))
-
-                if (!success) {
+                if (json.has("error")) {
                     return@withContext OdooAuthResult.InvalidCredentials
                 }
 
-                val sessionInfo = runCatching { fetchSessionInfo(baseUrl) }.getOrNull()
+                val result = json.optJSONObject("result")
+                val uid = result?.opt("uid")
+                if (result == null || uid == null || uid == false) {
+                    return@withContext OdooAuthResult.InvalidCredentials
+                }
 
                 OdooAuthResult.Success(
-                    uid = sessionInfo?.optInt("uid", -1) ?: -1,
-                    login = sessionInfo?.optString("username", login) ?: login,
-                    name = sessionInfo?.optString("name", login) ?: login,
+                    uid = (uid as? Number)?.toInt() ?: -1,
+                    login = result.optString("username", login),
+                    name = result.optString("name", login),
                 )
             } catch (t: Throwable) {
                 OdooAuthResult.NetworkError(t.message)
             }
         }
 
-    /** Calls `/web/session/get_session_info` to retrieve the authenticated user's uid/name. */
-    private suspend fun fetchSessionInfo(baseUrl: String): JSONObject? {
+    /**
+     * Resolves the database name for [baseUrl]: asks `/web/database/list` and uses its result
+     * when exactly one database is listed, otherwise falls back to the server's hostname
+     * (this single-tenant deployment names its database after the URL).
+     */
+    private suspend fun resolveDatabase(baseUrl: String): String {
+        val listed = runCatching { rpcCall(baseUrl, "/web/database/list", JSONObject()) }
+            .getOrNull()
+            ?.optJSONArray("result")
+        if (listed != null && listed.length() == 1) {
+            return listed.getString(0)
+        }
+        return URI(baseUrl).host.orEmpty()
+    }
+
+    private suspend fun rpcCall(baseUrl: String, path: String, params: JSONObject): JSONObject? {
         val payload = JSONObject().apply {
             put("jsonrpc", "2.0")
             put("method", "call")
-            put("params", JSONObject())
+            put("params", params)
         }
 
-        val response = fetch(
-            url = "${baseUrl.trimEnd('/')}/web/session/get_session_info",
-            method = "POST",
-            body = payload.toString(),
-            headers = mapOf("Content-Type" to "application/json", "Accept" to "application/json"),
-        ) ?: return null
+        val request = WebRequest.Builder("${baseUrl.trimEnd('/')}$path")
+            .method("POST")
+            .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
+            .body(payload.toString())
+            .build()
 
+        val response = executor.fetch(request).poll(20_000L) ?: return null
         if (response.statusCode !in 200..299) return null
 
-        val result = JSONObject(response.text).optJSONObject("result") ?: return null
-        val uid = result.opt("uid")
-        if (uid == null || uid == false) return null
-        return result
-    }
-
-    private class FetchResult(val statusCode: Int, val uri: String, val redirected: Boolean, val text: String)
-
-    private suspend fun fetch(
-        url: String,
-        method: String,
-        body: String? = null,
-        headers: Map<String, String> = emptyMap(),
-    ): FetchResult? {
-        val builder = WebRequest.Builder(url).method(method)
-        headers.forEach { (key, value) -> builder.header(key, value) }
-        body?.let { builder.body(it) }
-
-        val response: WebResponse = executor.fetch(builder.build()).poll(20_000L) ?: return null
         val text = response.body?.use { it.bufferedReader().readText() }.orEmpty()
-        return FetchResult(response.statusCode, response.uri, response.redirected, text)
+        return runCatching { JSONObject(text) }.getOrNull()
     }
 }

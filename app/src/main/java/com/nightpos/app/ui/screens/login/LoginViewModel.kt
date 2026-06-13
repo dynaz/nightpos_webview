@@ -97,7 +97,8 @@ class LoginViewModel(
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch {
-            when (val result = authClient.authenticate(baseUrl, login, password)) {
+            val isPin = state.mode == LoginMode.PIN
+            when (val result = authClient.authenticate(baseUrl, login, password, isPin)) {
                 is OdooAuthResult.Success -> {
                     preferencesManager.setLastLogin(result.login)
                     preferencesManager.setLoggedIn(true)
