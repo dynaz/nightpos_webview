@@ -27,6 +27,7 @@ class PreferencesManager(private val context: Context) {
         val PRINTER_PAPER_WIDTH_MM = intPreferencesKey("printer_paper_width_mm")
         val LOGGED_IN = booleanPreferencesKey("logged_in")
         val LAST_LOGIN = stringPreferencesKey("last_login")
+        val DISPLAY_NAME = stringPreferencesKey("display_name")
     }
 
     val serverUrl: Flow<String> = context.dataStore.data.map { prefs ->
@@ -59,6 +60,11 @@ class PreferencesManager(private val context: Context) {
         prefs[Keys.LAST_LOGIN] ?: ""
     }
 
+    /** Odoo display name of the signed-in user (e.g. "Administrator", "John Doe"). */
+    val displayName: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[Keys.DISPLAY_NAME] ?: ""
+    }
+
     suspend fun setServerUrl(url: String) {
         context.dataStore.edit { it[Keys.SERVER_URL] = url.trim().trimEnd('/') }
     }
@@ -85,5 +91,9 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun setLastLogin(login: String) {
         context.dataStore.edit { it[Keys.LAST_LOGIN] = login }
+    }
+
+    suspend fun setDisplayName(name: String) {
+        context.dataStore.edit { it[Keys.DISPLAY_NAME] = name }
     }
 }

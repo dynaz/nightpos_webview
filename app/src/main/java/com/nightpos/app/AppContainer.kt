@@ -25,7 +25,7 @@ class AppContainer(context: Context) {
     fun dashboardViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
         // Use the singleton jsBridge from Application so the posConfigs StateFlow
         // is the same instance that the GeckoView prompt delegate writes to.
-        initializer { DashboardViewModel(sessionManager, NightPOSApplication.jsBridge.posConfigs) }
+        initializer { DashboardViewModel(sessionManager, NightPOSApplication.jsBridge.posConfigs, preferencesManager) }
     }
 
     fun settingsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {

@@ -11,15 +11,18 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CardGiftcard
@@ -33,6 +36,7 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,7 +45,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +56,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import com.nightpos.app.R
 import com.nightpos.app.ui.components.FALLBACK_OUTLETS
 import com.nightpos.app.ui.components.MenuCard
@@ -118,7 +127,10 @@ fun DashboardScreen(
                 .statusBarsPadding()
                 .padding(horizontal = 32.dp, vertical = 24.dp),
         ) {
-            DashboardHeader(onLogoClick = { onAction(DashboardAction.OpenNposHome) })
+            DashboardHeader(
+                onLogoClick = { onAction(DashboardAction.OpenNposHome) },
+                userName = uiState.displayName,
+            )
 
             Spacer(modifier = Modifier.size(24.dp))
 
@@ -258,39 +270,87 @@ fun DashboardScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun DashboardHeader(onLogoClick: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Surface(
-            shape = CircleShape,
-            color = NightBlack,
-            border = androidx.compose.foundation.BorderStroke(1.dp, NeonPurple.copy(alpha = 0.5f)),
-            modifier = Modifier
-                .size(72.dp)
-                .clickable(onClick = onLogoClick),
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_app_logo),
-                contentDescription = stringResource(R.string.content_desc_app_logo),
-                contentScale = ContentScale.Crop,
+private fun DashboardHeader(onLogoClick: () -> Unit, userName: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        // ── Left: logo + title ─────────────────────────────────────────────
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = CircleShape,
+                color = NightBlack,
+                border = androidx.compose.foundation.BorderStroke(1.dp, NeonPurple.copy(alpha = 0.5f)),
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clip(CircleShape),
-            )
+                    .size(72.dp)
+                    .clickable(onClick = onLogoClick),
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_app_logo),
+                    contentDescription = stringResource(R.string.content_desc_app_logo),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                )
+            }
+            Spacer(modifier = Modifier.size(20.dp))
+            Column {
+                Text(
+                    text = stringResource(R.string.dashboard_title),
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = stringResource(R.string.dashboard_subtitle),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
-        Spacer(modifier = Modifier.size(20.dp))
-        Column {
-            Text(
-                text = stringResource(R.string.dashboard_title),
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                text = stringResource(R.string.dashboard_subtitle),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+
+        // ── Right: username + digital clock ────────────────────────────────
+        Column(horizontalAlignment = Alignment.End) {
+            if (userName.isNotBlank()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.AccountCircle,
+                        contentDescription = null,
+                        tint = NeonPurple,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = userName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                Spacer(modifier = Modifier.size(4.dp))
+            }
+            DigitalClock()
         }
     }
+}
+
+private val clockFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+
+@Composable
+private fun DigitalClock() {
+    var time by remember { mutableStateOf(LocalTime.now().format(clockFormatter)) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1_000)
+            time = LocalTime.now().format(clockFormatter)
+        }
+    }
+    Text(
+        text = time,
+        style = MaterialTheme.typography.titleLarge,
+        color = NeonCyan,
+        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+    )
 }
 
 @Composable
