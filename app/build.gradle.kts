@@ -14,8 +14,8 @@ android {
         // GeckoView 143+ requires minSdk 26; targeting modern 64-bit Android 15 devices.
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "3.0.1"
+        versionCode = 3
+        versionName = "3.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
