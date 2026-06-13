@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.nightpos.app"
+    namespace = "com.nightpos.geckoview"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nightpos.app"
+        applicationId = "com.nightpos.geckoview"
         // 21 = Android 5.0 — GeckoView 142 supports API 21+.
         // Sunmi D2s runs Android 7.1.2 (API 25), well above this floor.
         // GeckoView 143+ raised minSdk to 26, so 142 is the highest version for D2s.

@@ -1,0 +1,100 @@
+package com.nightpos.geckoview
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.nightpos.geckoview.ui.navigation.NightPOSNavHost
+import com.nightpos.geckoview.ui.screens.settings.SettingsUiState
+import com.nightpos.geckoview.ui.theme.NightPOSTheme
+import com.nightpos.geckoview.util.AutoReopenPosEffect
+import com.nightpos.geckoview.webview.GeckoSessionFactory
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.GeckoView
+
+class MainActivity : ComponentActivity() {
+
+    private lateinit var appContainer: AppContainer
+    private var geckoSession: GeckoSession? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        appContainer = AppContainer(application)
+
+        setContent {
+            NightPOSTheme {
+                val context = LocalContext.current
+
+                // One GeckoView + one GeckoSession shared across all screens.
+                // The session is opened lazily inside WebViewScreen so that content
+                // processes are not spawned until GeckoView is actually shown.
+                // (On Sunmi T1 / kernel 3.10, the POS opens in Firefox Custom Tabs
+                // and GeckoView is never used, avoiding the SELinux IPC crash loop.)
+                val sharedGeckoView = remember {
+                    GeckoView(context).also { view ->
+                        val session = GeckoSessionFactory.create()
+                        view.setSession(session)
+                        geckoSession = session
+                    }
+                }
+
+                val navController = rememberNavController()
+                val backStackEntry by navController.currentBackStackEntryAsState()
+
+                val isOnline by appContainer.connectivityObserver.isOnline
+                    .distinctUntilChanged()
+                    .collectAsState(initial = true)
+
+                val settingsState by produceState(initialValue = SettingsUiState()) {
+                    val prefs = appContainer.preferencesManager
+                    combine(
+                        prefs.serverUrl,
+                        prefs.kioskModeEnabled,
+                        prefs.keepScreenOnEnabled,
+                        prefs.autoReopenPosEnabled,
+                    ) { url, kiosk, keepOn, autoReopen ->
+                        SettingsUiState(
+                            serverUrl = url,
+                            kioskModeEnabled = kiosk,
+                            keepScreenOnEnabled = keepOn,
+                            autoReopenPosEnabled = autoReopen,
+                        )
+                    }.collect { value = it }
+                }
+
+                AutoReopenPosEffect(
+                    navController = navController,
+                    kioskModeEnabled = settingsState.kioskModeEnabled,
+                    autoReopenEnabled = settingsState.autoReopenPosEnabled,
+                    currentRoute = backStackEntry?.destination?.route,
+                )
+
+                NightPOSNavHost(
+                    appContainer = appContainer,
+                    sharedGeckoView = sharedGeckoView,
+                    isOnline = isOnline,
+                    navController = navController,
+                )
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        geckoSession?.close()
+        geckoSession = null
+        super.onDestroy()
+    }
+}

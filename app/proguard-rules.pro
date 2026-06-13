@@ -1,7 +1,7 @@
 # Add project specific ProGuard rules here.
 
 # Keep WebView JavaScript interface methods
--keepclassmembers class com.nightpos.app.webview.* {
+-keepclassmembers class com.nightpos.geckoview.webview.* {
    public *;
 }
 -keepclassmembers class * extends android.webkit.WebChromeClient {
