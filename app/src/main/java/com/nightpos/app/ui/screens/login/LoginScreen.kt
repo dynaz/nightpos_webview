@@ -147,7 +147,7 @@ fun LoginScreen(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(96.dp)
+                        .size(80.dp)
                         .clip(CircleShape)
                         .background(NightBlack),
                 ) {
@@ -161,7 +161,7 @@ fun LoginScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
                     text = stringResource(R.string.app_name),
@@ -175,7 +175,7 @@ fun LoginScreen(
                     color = TextSecondary,
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     SegmentedButton(
@@ -194,7 +194,7 @@ fun LoginScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 when (uiState.mode) {
                     LoginMode.NORMAL -> NormalLoginForm(
@@ -217,7 +217,7 @@ fun LoginScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
                     onClick = {
@@ -301,6 +301,8 @@ private fun NormalLoginForm(
     }
 }
 
+private val PinKeySize = 48.dp
+
 @Composable
 private fun PinLoginForm(uiState: LoginUiState, viewModel: LoginViewModel) {
     Column(
@@ -319,7 +321,7 @@ private fun PinLoginForm(uiState: LoginUiState, viewModel: LoginViewModel) {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = if (uiState.pin.isEmpty()) " " else "•".repeat(uiState.pin.length),
@@ -328,33 +330,34 @@ private fun PinLoginForm(uiState: LoginUiState, viewModel: LoginViewModel) {
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         val rows = listOf(
             listOf('1', '2', '3'),
             listOf('4', '5', '6'),
             listOf('7', '8', '9'),
         )
-        rows.forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                row.forEach { digit ->
-                    PinKey(onClick = { viewModel.appendPinDigit(digit) }) {
-                        Text(digit.toString(), style = MaterialTheme.typography.headlineSmall)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            rows.forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEach { digit ->
+                        PinKey(onClick = { viewModel.appendPinDigit(digit) }) {
+                            Text(digit.toString(), style = MaterialTheme.typography.titleLarge)
+                        }
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Spacer(modifier = Modifier.size(64.dp))
-            PinKey(onClick = { viewModel.appendPinDigit('0') }) {
-                Text("0", style = MaterialTheme.typography.headlineSmall)
-            }
-            PinKey(onClick = { viewModel.backspacePin() }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Backspace,
-                    contentDescription = stringResource(R.string.content_desc_pin_backspace),
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Spacer(modifier = Modifier.size(PinKeySize))
+                PinKey(onClick = { viewModel.appendPinDigit('0') }) {
+                    Text("0", style = MaterialTheme.typography.titleLarge)
+                }
+                PinKey(onClick = { viewModel.backspacePin() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Backspace,
+                        contentDescription = stringResource(R.string.content_desc_pin_backspace),
+                    )
+                }
             }
         }
     }
@@ -366,7 +369,7 @@ private fun PinKey(onClick: () -> Unit, content: @Composable () -> Unit) {
         onClick = onClick,
         shape = CircleShape,
         contentPadding = PaddingValues(0.dp),
-        modifier = Modifier.size(64.dp),
+        modifier = Modifier.size(PinKeySize),
     ) {
         content()
     }
