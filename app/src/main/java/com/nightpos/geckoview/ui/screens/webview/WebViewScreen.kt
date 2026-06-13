@@ -223,19 +223,19 @@ private fun WebViewTopBar(
     TopAppBar(
         title = { Text(title, color = MaterialTheme.colorScheme.onBackground) },
         navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.action_back),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-        },
-        actions = {
             IconButton(onClick = onHome) {
                 Icon(
                     Icons.Filled.Home,
                     contentDescription = stringResource(R.string.action_home),
+                    tint = NeonPurple,
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.action_back),
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
