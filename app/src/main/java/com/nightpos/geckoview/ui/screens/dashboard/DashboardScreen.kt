@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -130,6 +131,7 @@ fun DashboardScreen(
         ) {
             DashboardHeader(
                 onLogoClick = { onAction(DashboardAction.OpenNposHome) },
+                onPrinterClick = { onAction(DashboardAction.OpenPrinters) },
                 userName = uiState.displayName,
             )
 
@@ -271,20 +273,26 @@ fun DashboardScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun DashboardHeader(onLogoClick: () -> Unit, userName: String) {
+private fun DashboardHeader(
+    onLogoClick: () -> Unit,
+    onPrinterClick: () -> Unit,
+    userName: String,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        // ── Left: logo + title ─────────────────────────────────────────────
+        // ── Left: clock → logo (home) → printer icon ───────────────────────
         Row(verticalAlignment = Alignment.CenterVertically) {
+            DigitalClock()
+            Spacer(modifier = Modifier.width(16.dp))
             Surface(
                 shape = CircleShape,
                 color = NightBlack,
                 border = androidx.compose.foundation.BorderStroke(1.dp, NeonPurple.copy(alpha = 0.5f)),
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(64.dp)
                     .clickable(onClick = onLogoClick),
             ) {
                 Image(
@@ -296,41 +304,33 @@ private fun DashboardHeader(onLogoClick: () -> Unit, userName: String) {
                         .clip(CircleShape),
                 )
             }
-            Spacer(modifier = Modifier.size(20.dp))
-            Column {
-                Text(
-                    text = stringResource(R.string.dashboard_title),
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = stringResource(R.string.dashboard_subtitle),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(onClick = onPrinterClick) {
+                Icon(
+                    imageVector = Icons.Filled.Print,
+                    contentDescription = "Printers",
+                    tint = NeonCyan,
+                    modifier = Modifier.size(28.dp),
                 )
             }
         }
 
-        // ── Right: username + digital clock ────────────────────────────────
-        Column(horizontalAlignment = Alignment.End) {
-            if (userName.isNotBlank()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.AccountCircle,
-                        contentDescription = null,
-                        tint = NeonPurple,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = userName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
-                Spacer(modifier = Modifier.size(4.dp))
+        // ── Right: username ────────────────────────────────────────────────
+        if (userName.isNotBlank()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.AccountCircle,
+                    contentDescription = null,
+                    tint = NeonPurple,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = userName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
             }
-            DigitalClock()
         }
     }
 }
