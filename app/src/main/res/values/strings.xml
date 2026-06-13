@@ -19,6 +19,8 @@
     <string name="menu_employees_desc">จัดการข้อมูลพนักงาน</string>
     <string name="menu_printers">เครื่องพิมพ์</string>
     <string name="menu_printers_desc">ตั้งค่าเครื่องพิมพ์ใบเสร็จ</string>
+    <string name="menu_pos_settings">ตั้งค่า POS</string>
+    <string name="menu_pos_settings_desc">ตั้งค่าหน้าขายและอุปกรณ์ POS</string>
     <string name="menu_settings">ตั้งค่า</string>
     <string name="menu_settings_desc">ปรับแต่งการตั้งค่าแอป</string>
     <string name="menu_logout">ออกจากระบบ</string>
@@ -120,6 +122,7 @@
 
 
     <string name="action_back">ย้อนกลับ</string>
+    <string name="action_home">หน้าหลัก</string>
     <string name="action_reload">โหลดหน้าใหม่</string>
     <string name="action_close">ปิด</string>
     <string name="action_save">บันทึก</string>

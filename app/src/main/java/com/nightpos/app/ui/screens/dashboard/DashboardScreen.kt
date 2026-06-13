@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -77,6 +78,7 @@ import com.nightpos.app.ui.theme.LimeAccent
 import com.nightpos.app.ui.theme.NeonCyan
 import com.nightpos.app.ui.theme.NeonPink
 import com.nightpos.app.ui.theme.NeonPurple
+import com.nightpos.app.ui.theme.NeonPurpleDark
 import com.nightpos.app.ui.theme.NeonVioletLight
 import com.nightpos.app.ui.theme.NightBlack
 import com.nightpos.app.ui.theme.OrangeAccent
@@ -130,6 +132,7 @@ sealed interface DashboardAction {
     data object OpenGiftCards : DashboardAction
     data object OpenEmployees : DashboardAction
     data object OpenPrinters : DashboardAction
+    data object OpenPosSettings : DashboardAction
     data object OpenSettings : DashboardAction
     data object Logout : DashboardAction
     data class OpenPosOutlet(val url: String, val name: String) : DashboardAction
@@ -221,6 +224,13 @@ fun DashboardScreen(
                     icon = Icons.Filled.Print,
                     accent = NeonCyan,
                     action = DashboardAction.OpenPrinters,
+                ),
+                DashboardMenuItem(
+                    title = stringResource(R.string.menu_pos_settings),
+                    description = stringResource(R.string.menu_pos_settings_desc),
+                    icon = Icons.Filled.Tune,
+                    accent = NeonPurpleDark,
+                    action = DashboardAction.OpenPosSettings,
                 ),
                 DashboardMenuItem(
                     title = stringResource(R.string.menu_settings),

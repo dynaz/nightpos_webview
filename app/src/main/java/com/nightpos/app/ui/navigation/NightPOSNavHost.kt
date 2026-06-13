@@ -122,6 +122,9 @@ fun NightPOSNavHost(
                         DashboardAction.OpenPrinters -> navController.navigate(
                             NightPOSDestination.WebViewDest.routeFor(WebViewKind.PRINTERS)
                         )
+                        DashboardAction.OpenPosSettings -> navController.navigate(
+                            NightPOSDestination.WebViewDest.routeFor(WebViewKind.POS_SETTINGS)
+                        )
                         DashboardAction.OpenSettings -> navController.navigate(NightPOSDestination.Settings.route)
                         DashboardAction.Logout -> Unit
                         is DashboardAction.OpenPosOutlet -> navController.navigate(
@@ -156,6 +159,7 @@ fun NightPOSNavHost(
                 WebViewKind.GIFT_CARDS -> stringResource(R.string.menu_gift_cards)
                 WebViewKind.EMPLOYEES -> stringResource(R.string.menu_employees)
                 WebViewKind.PRINTERS -> stringResource(R.string.menu_printers)
+                WebViewKind.POS_SETTINGS -> stringResource(R.string.menu_pos_settings)
             }
             val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
             val url = when (kind) {
@@ -167,6 +171,7 @@ fun NightPOSNavHost(
                 WebViewKind.GIFT_CARDS -> Constants.giftCardsUrl(baseUrl)
                 WebViewKind.EMPLOYEES -> Constants.employeesUrl(baseUrl)
                 WebViewKind.PRINTERS -> Constants.printersUrl(baseUrl)
+                WebViewKind.POS_SETTINGS -> Constants.posSettingsUrl(baseUrl)
             }
 
             WebViewScreen(
@@ -179,6 +184,9 @@ fun NightPOSNavHost(
                 kioskModeEnabled = settingsState.kioskModeEnabled && kind == WebViewKind.POS,
                 keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
                 onExit = {
+                    navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                },
+                onHome = {
                     navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
                 },
                 onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
@@ -212,6 +220,9 @@ fun NightPOSNavHost(
                 kioskModeEnabled = false,
                 keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
                 onExit = {
+                    navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                },
+                onHome = {
                     navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
                 },
                 onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },

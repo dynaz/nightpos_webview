@@ -40,7 +40,8 @@ enum class WebViewKind(val routeArg: String) {
     DISCOUNT_LOYALTY("discount-loyalty"),
     GIFT_CARDS("gift-cards"),
     EMPLOYEES("employees"),
-    PRINTERS("printers");
+    PRINTERS("printers"),
+    POS_SETTINGS("pos-settings");
 
     companion object {
         fun fromRouteArg(value: String?): WebViewKind =

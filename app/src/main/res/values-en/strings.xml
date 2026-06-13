@@ -19,6 +19,8 @@
     <string name="menu_employees_desc">Manage employee records</string>
     <string name="menu_printers">Printers</string>
     <string name="menu_printers_desc">Configure receipt printers</string>
+    <string name="menu_pos_settings">Pos Setting</string>
+    <string name="menu_pos_settings_desc">Configure POS terminal settings</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_settings_desc">Customize app settings</string>
     <string name="menu_logout">Log Out</string>
@@ -120,6 +122,7 @@
 
 
     <string name="action_back">Back</string>
+    <string name="action_home">Home</string>
     <string name="action_reload">Reload</string>
     <string name="action_close">Close</string>
     <string name="action_save">Save</string>

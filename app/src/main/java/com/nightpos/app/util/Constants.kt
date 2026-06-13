@@ -23,6 +23,7 @@ object Constants {
     const val GIFT_CARDS_PATH = "/npos/gift-cards-ewallet"
     const val EMPLOYEES_PATH = "/npos/employees"
     const val PRINTERS_PATH = "/npos/action-968"
+    const val POS_SETTINGS_PATH = "/npos/action-759?debug=1"
 
     fun nposHomeUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$NPOS_HOME_PATH"
     fun openPosUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$POS_PATH"
@@ -33,6 +34,7 @@ object Constants {
     fun giftCardsUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$GIFT_CARDS_PATH"
     fun employeesUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$EMPLOYEES_PATH"
     fun printersUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$PRINTERS_PATH"
+    fun posSettingsUrl(baseUrl: String = DEFAULT_BASE_URL): String = "${baseUrl.trimEnd('/')}$POS_SETTINGS_PATH"
 
     /** Root domain that all WebView navigation is restricted to (subdomains included). */
     const val ALLOWED_DOMAIN = "nightpos.com"

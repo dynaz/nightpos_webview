@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -62,6 +63,7 @@ fun WebViewScreen(
     kioskModeEnabled: Boolean,
     keepScreenOnEnabled: Boolean,
     onExit: () -> Unit,
+    onHome: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -155,6 +157,7 @@ fun WebViewScreen(
                             if (uiState.canGoBack) session?.goBack() else viewModel.requestExit()
                         },
                         onReload = { session?.reload() },
+                        onHome = onHome,
                         onSettings = onOpenSettings,
                     )
                 }
@@ -210,7 +213,13 @@ fun WebViewScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WebViewTopBar(title: String, onBack: () -> Unit, onReload: () -> Unit, onSettings: () -> Unit) {
+private fun WebViewTopBar(
+    title: String,
+    onBack: () -> Unit,
+    onReload: () -> Unit,
+    onHome: () -> Unit,
+    onSettings: () -> Unit,
+) {
     TopAppBar(
         title = { Text(title, color = MaterialTheme.colorScheme.onBackground) },
         navigationIcon = {
@@ -223,6 +232,13 @@ private fun WebViewTopBar(title: String, onBack: () -> Unit, onReload: () -> Uni
             }
         },
         actions = {
+            IconButton(onClick = onHome) {
+                Icon(
+                    Icons.Filled.Home,
+                    contentDescription = stringResource(R.string.action_home),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
+            }
             IconButton(onClick = onReload) {
                 Icon(
                     Icons.Filled.Refresh,
