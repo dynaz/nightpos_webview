@@ -137,25 +137,6 @@ class NightPOSApplication : Application() {
               # of upstream default changes.
               dom.serviceWorkers.enabled: true
               dom.indexedDB.enabled: true
-              # --- Memory tuning for 2GB-RAM Sunmi D2s ---
-              # Fission spawns a separate content process per isolated origin
-              # (each costing tens of MB baseline). The POS only ever
-              # navigates within one trusted Odoo origin, so cap the extra
-              # isolated-content processes Gecko is allowed to spawn and
-              # narrow which origins get their own process at all.
-              dom.ipc.processCount.webIsolated: 1
-              fission.webContentIsolationStrategy: 0
-              # Default decoded-image cache can grow to ~1GB; the POS UI
-              # only needs product thumbnails/icons.
-              image.mem.surfacecache.max_size_kb: 20480
-              # Default media memory/disk caches are sized for desktop video
-              # (hundreds of MB); the POS only plays short UI sounds.
-              media.memory_cache_max_size: 8192
-              media.cache_size: 16384
-              # Each back/forward-cached (bfcache) page keeps its full DOM +
-              # JS heap alive. Odoo's POS is a single-page app, so cached
-              # history entries are pure overhead.
-              browser.sessionhistory.max_total_viewers: 1
             """.trimIndent()
         )
         return config
