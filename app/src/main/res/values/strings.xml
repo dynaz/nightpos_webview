@@ -138,6 +138,22 @@
     <string name="permission_location_rationale">แอปต้องการสิทธิ์เข้าถึงตำแหน่งเพื่อใช้งานฟังก์ชันบางอย่างของระบบ POS</string>
     <string name="permission_denied">สิทธิ์ถูกปฏิเสธ บางฟังก์ชันอาจไม่สามารถใช้งานได้</string>
 
+    <!-- Login -->
+    <string name="login_subtitle">เข้าสู่ระบบเพื่อใช้งาน NightPOS</string>
+    <string name="login_tab_pin">PIN</string>
+    <string name="login_tab_normal">ทั่วไป</string>
+    <string name="login_field_username">ชื่อผู้ใช้ / อีเมล</string>
+    <string name="login_field_password">รหัสผ่าน</string>
+    <string name="login_button_signin">เข้าสู่ระบบ</string>
+    <string name="login_signing_in">กำลังเข้าสู่ระบบ…</string>
+    <string name="login_switch_user">เปลี่ยนผู้ใช้</string>
+    <string name="login_signed_in_as">เข้าสู่ระบบในชื่อ %1$s</string>
+    <string name="login_error_empty">กรุณากรอกข้อมูลให้ครบถ้วน</string>
+    <string name="login_error_invalid_credentials">ชื่อผู้ใช้หรือรหัสผ่าน/PIN ไม่ถูกต้อง</string>
+    <string name="login_error_network">ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่</string>
+    <string name="content_desc_password_toggle">แสดง/ซ่อนรหัสผ่าน</string>
+    <string name="content_desc_pin_backspace">ลบตัวอักษร</string>
+
     <!-- Splash -->
     <string name="splash_loading">กำลังเริ่มต้นระบบ…</string>
 

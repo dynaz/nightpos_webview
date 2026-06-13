@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -20,6 +21,8 @@ import com.nightpos.app.R
 import com.nightpos.app.ui.screens.dashboard.DashboardAction
 import com.nightpos.app.ui.screens.dashboard.DashboardScreen
 import com.nightpos.app.ui.screens.dashboard.DashboardViewModel
+import com.nightpos.app.ui.screens.login.LoginScreen
+import com.nightpos.app.ui.screens.login.LoginViewModel
 import com.nightpos.app.ui.screens.settings.SettingsScreen
 import com.nightpos.app.ui.screens.settings.SettingsViewModel
 import com.nightpos.app.ui.screens.splash.SplashScreen
@@ -27,6 +30,7 @@ import com.nightpos.app.ui.screens.webview.WebViewScreen
 import com.nightpos.app.ui.screens.webview.WebViewViewModel
 import com.nightpos.app.twa.TwaLauncherActivity
 import com.nightpos.app.util.Constants
+import kotlinx.coroutines.launch
 import org.mozilla.geckoview.GeckoView
 
 /**
@@ -71,11 +75,37 @@ fun NightPOSNavHost(
     NavHost(navController = navController, startDestination = NightPOSDestination.Splash.route) {
 
         composable(NightPOSDestination.Splash.route) {
+            val isLoggedIn by appContainer.preferencesManager.isLoggedIn.collectAsState(initial = false)
             SplashScreen(
                 onFinished = {
-                    navController.navigate(NightPOSDestination.Dashboard.route) {
+                    val target = if (isLoggedIn) NightPOSDestination.Dashboard.route else NightPOSDestination.Login.route
+                    navController.navigate(target) {
                         popUpTo(NightPOSDestination.Splash.route) { inclusive = true }
                     }
+                },
+            )
+        }
+
+        composable(NightPOSDestination.Login.route) {
+            val loginViewModel: LoginViewModel = viewModel(
+                factory = appContainer.loginViewModelFactory(),
+            )
+            val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
+
+            LoginScreen(
+                viewModel = loginViewModel,
+                baseUrl = baseUrl,
+                onLoginSuccess = {
+                    // Re-load the npos backend so pos-configs.js can populate the
+                    // "Open POS" outlet FAB now that the session cookie is set.
+                    sharedGeckoView.session?.loadUri("$baseUrl/npos")
+                    navController.navigate(NightPOSDestination.Dashboard.route) {
+                        popUpTo(NightPOSDestination.Login.route) { inclusive = true }
+                    }
+                },
+                onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
+                onOpenPosOutlet = { url, name ->
+                    navController.navigate(NightPOSDestination.OutletDest.routeFor(url, name))
                 },
             )
         }
@@ -85,6 +115,7 @@ fun NightPOSNavHost(
                 factory = appContainer.dashboardViewModelFactory(),
             )
             val context = LocalContext.current
+            val coroutineScope = rememberCoroutineScope()
             val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
 
             fun launchTwa(url: String) {
@@ -134,6 +165,10 @@ fun NightPOSNavHost(
                 },
                 onLoggedOut = {
                     sharedGeckoView.session?.loadUri("about:blank")
+                    coroutineScope.launch { appContainer.preferencesManager.setLoggedIn(false) }
+                    navController.navigate(NightPOSDestination.Login.route) {
+                        popUpTo(NightPOSDestination.Dashboard.route) { inclusive = true }
+                    }
                 },
             )
         }
@@ -220,10 +255,12 @@ fun NightPOSNavHost(
                 kioskModeEnabled = false,
                 keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
                 onExit = {
-                    navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    // Reached from either Dashboard or Login — return to whichever
+                    // screen pushed this outlet route.
+                    navController.popBackStack()
                 },
                 onHome = {
-                    navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    navController.popBackStack()
                 },
                 onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
             )

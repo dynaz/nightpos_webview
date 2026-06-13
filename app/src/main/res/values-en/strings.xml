@@ -138,6 +138,22 @@
     <string name="permission_location_rationale">The app needs location access to use certain features of the POS system</string>
     <string name="permission_denied">Permission denied. Some features may not work</string>
 
+    <!-- Login -->
+    <string name="login_subtitle">Sign in to use NightPOS</string>
+    <string name="login_tab_pin">PIN</string>
+    <string name="login_tab_normal">Normal</string>
+    <string name="login_field_username">Username / Email</string>
+    <string name="login_field_password">Password</string>
+    <string name="login_button_signin">Sign In</string>
+    <string name="login_signing_in">Signing in…</string>
+    <string name="login_switch_user">Switch User</string>
+    <string name="login_signed_in_as">Signed in as %1$s</string>
+    <string name="login_error_empty">Please fill in all fields</string>
+    <string name="login_error_invalid_credentials">Invalid username or password/PIN</string>
+    <string name="login_error_network">Could not connect to the server. Please try again</string>
+    <string name="content_desc_password_toggle">Show/hide password</string>
+    <string name="content_desc_pin_backspace">Backspace</string>
+
     <!-- Splash -->
     <string name="splash_loading">Starting up…</string>
 

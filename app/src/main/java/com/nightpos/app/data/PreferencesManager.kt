@@ -25,6 +25,8 @@ class PreferencesManager(private val context: Context) {
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val AUTO_REOPEN_POS = booleanPreferencesKey("auto_reopen_pos")
         val PRINTER_PAPER_WIDTH_MM = intPreferencesKey("printer_paper_width_mm")
+        val LOGGED_IN = booleanPreferencesKey("logged_in")
+        val LAST_LOGIN = stringPreferencesKey("last_login")
     }
 
     val serverUrl: Flow<String> = context.dataStore.data.map { prefs ->
@@ -47,6 +49,16 @@ class PreferencesManager(private val context: Context) {
         prefs[Keys.PRINTER_PAPER_WIDTH_MM] ?: 58
     }
 
+    /** True once the user has successfully signed in via the native Login screen. */
+    val isLoggedIn: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.LOGGED_IN] ?: false
+    }
+
+    /** Last login/username used — prefills the PIN login tab. */
+    val lastLogin: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[Keys.LAST_LOGIN] ?: ""
+    }
+
     suspend fun setServerUrl(url: String) {
         context.dataStore.edit { it[Keys.SERVER_URL] = url.trim().trimEnd('/') }
     }
@@ -65,5 +77,13 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun setPrinterPaperWidthMm(widthMm: Int) {
         context.dataStore.edit { it[Keys.PRINTER_PAPER_WIDTH_MM] = widthMm }
+    }
+
+    suspend fun setLoggedIn(loggedIn: Boolean) {
+        context.dataStore.edit { it[Keys.LOGGED_IN] = loggedIn }
+    }
+
+    suspend fun setLastLogin(login: String) {
+        context.dataStore.edit { it[Keys.LAST_LOGIN] = login }
     }
 }
