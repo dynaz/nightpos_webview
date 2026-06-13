@@ -15,8 +15,8 @@ android {
         // GeckoView 143+ raised minSdk to 26, so 142 is the highest version for D2s.
         minSdk = 21
         targetSdk = 35
-        versionCode = 13
-        versionName = "2.0.8"
+        versionCode = 14
+        versionName = "2.0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
