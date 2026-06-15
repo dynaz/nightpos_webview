@@ -39,8 +39,14 @@ class NetworkConnectivityObserver(context: Context) {
             }
         }
 
+        // The default NetworkRequest capability set requires NET_CAPABILITY_INTERNET
+        // (validated public internet) and NET_CAPABILITY_NOT_VPN, so callbacks would
+        // never fire for a WireGuard tunnel that only routes to a private Odoo
+        // server. Remove both so we observe any active network — hasInternet()
+        // re-checks the actual active network's transports either way.
         val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
             .build()
 
         connectivityManager.registerNetworkCallback(request, callback)
@@ -53,6 +59,16 @@ class NetworkConnectivityObserver(context: Context) {
     private fun hasInternet(): Boolean {
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+
+        // Don't gate on NET_CAPABILITY_INTERNET/VALIDATED: those reflect whether
+        // Android's NetworkMonitor could reach a public connectivity-check endpoint,
+        // which fails on networks that only route to a private Odoo server (e.g. over
+        // a WireGuard tunnel with no general internet access). Any connected
+        // transport is treated as "online" — GeckoView's own page load determines
+        // real reachability to the configured POS server.
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
     }
 }

@@ -153,6 +153,19 @@ class NightPOSApplication : Application() {
               browser.cache.disk.capacity: 262144
               browser.cache.memory.enable: true
               browser.cache.memory.capacity: 16384
+              # Telemetry/experiments/health-report uploads are pure overhead for an
+              # embedded kiosk POS — disable so the Sunmi D2s isn't spending CPU,
+              # battery, and limited bandwidth on background reporting traffic.
+              datareporting.healthreport.uploadEnabled: false
+              toolkit.telemetry.enabled: false
+              toolkit.telemetry.unified: false
+              app.normandy.enabled: false
+              # Speculative network prefetching/DNS prefetch fights for bandwidth
+              # with real POS requests and is wasted on a fixed-destination app
+              # (often on a constrained WireGuard/VPN link to the Odoo server).
+              network.predictor.enabled: false
+              network.dns.disablePrefetch: true
+              network.prefetch-next: false
             """.trimIndent()
         )
         return config
