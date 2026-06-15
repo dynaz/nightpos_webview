@@ -166,6 +166,15 @@ class NightPOSApplication : Application() {
               network.predictor.enabled: false
               network.dns.disablePrefetch: true
               network.prefetch-next: false
+              # Disable DNS-over-HTTPS (Trusted Recursive Resolver). With DoH on,
+              # GeckoView resolves hostnames against a hardcoded public resolver
+              # and ignores the DNS servers the OS/VPN supplies — so on a
+              # WireGuard tunnel that relies on its own DNS for the Odoo host,
+              # GeckoView can end up with the wrong (or no) address while every
+              # other app on the device resolves it correctly. Forcing the
+              # native/OS resolver makes GeckoView consistent with the system,
+              # whether or not the VPN is active.
+              network.trr.mode: 5
             """.trimIndent()
         )
         return config

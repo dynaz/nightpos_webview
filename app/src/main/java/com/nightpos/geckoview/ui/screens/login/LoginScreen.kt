@@ -215,6 +215,18 @@ fun LoginScreen(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    // Technical detail (e.g. GeckoView error code) shown alongside the
+                    // friendly message so staff can relay something actionable without
+                    // needing adb logcat access on the device.
+                    uiState.errorDetail?.let { detail ->
+                        Text(
+                            text = detail,
+                            color = TextSecondary,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

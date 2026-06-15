@@ -26,6 +26,7 @@ data class LoginUiState(
     val pin: String = "",
     val isLoading: Boolean = false,
     val errorMessage: LoginError? = null,
+    val errorDetail: String? = null,
     val loginSuccess: Boolean = false,
     val posConfigs: List<PosConfig> = emptyList(),
 )
@@ -57,31 +58,31 @@ class LoginViewModel(
     }
 
     fun setMode(mode: LoginMode) {
-        _uiState.update { it.copy(mode = mode, errorMessage = null) }
+        _uiState.update { it.copy(mode = mode, errorMessage = null, errorDetail = null) }
     }
 
     fun setLogin(value: String) {
-        _uiState.update { it.copy(login = value, errorMessage = null) }
+        _uiState.update { it.copy(login = value, errorMessage = null, errorDetail = null) }
     }
 
     fun setPassword(value: String) {
-        _uiState.update { it.copy(password = value, errorMessage = null) }
+        _uiState.update { it.copy(password = value, errorMessage = null, errorDetail = null) }
     }
 
     fun appendPinDigit(digit: Char) {
         _uiState.update {
-            if (it.pin.length < 12) it.copy(pin = it.pin + digit, errorMessage = null) else it
+            if (it.pin.length < 12) it.copy(pin = it.pin + digit, errorMessage = null, errorDetail = null) else it
         }
     }
 
     fun backspacePin() {
-        _uiState.update { it.copy(pin = it.pin.dropLast(1), errorMessage = null) }
+        _uiState.update { it.copy(pin = it.pin.dropLast(1), errorMessage = null, errorDetail = null) }
     }
 
     /** Switches to Normal mode with a blank login, so a different user can sign in. */
     fun switchUser() {
         _uiState.update {
-            it.copy(mode = LoginMode.NORMAL, login = "", password = "", pin = "", errorMessage = null)
+            it.copy(mode = LoginMode.NORMAL, login = "", password = "", pin = "", errorMessage = null, errorDetail = null)
         }
     }
 
@@ -91,11 +92,11 @@ class LoginViewModel(
         val password = if (state.mode == LoginMode.PIN) state.pin else state.password
 
         if (login.isBlank() || password.isBlank()) {
-            _uiState.update { it.copy(errorMessage = LoginError.EMPTY_FIELDS) }
+            _uiState.update { it.copy(errorMessage = LoginError.EMPTY_FIELDS, errorDetail = null) }
             return
         }
 
-        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        _uiState.update { it.copy(isLoading = true, errorMessage = null, errorDetail = null) }
         viewModelScope.launch {
             val isPin = state.mode == LoginMode.PIN
             when (val result = authClient.authenticate(baseUrl, login, password, isPin)) {
@@ -111,7 +112,9 @@ class LoginViewModel(
                     }
                 }
                 is OdooAuthResult.NetworkError -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = LoginError.NETWORK) }
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMessage = LoginError.NETWORK, errorDetail = result.message)
+                    }
                 }
             }
         }

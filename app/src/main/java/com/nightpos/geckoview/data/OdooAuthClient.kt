@@ -1,11 +1,13 @@
 package com.nightpos.geckoview.data
 
+import android.util.Log
 import com.nightpos.geckoview.NightPOSApplication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.mozilla.geckoview.GeckoWebExecutor
 import org.mozilla.geckoview.WebRequest
+import org.mozilla.geckoview.WebRequestError
 import java.net.URI
 
 /** Outcome of an Odoo `/web/session/authenticate` JSON-RPC call. */
@@ -36,6 +38,15 @@ sealed interface OdooAuthResult {
  * handling required.
  */
 class OdooAuthClient {
+
+    companion object {
+        private const val TAG = "NightPOS"
+
+        // Generous timeout for a cold TLS handshake over a WireGuard tunnel on a
+        // Sunmi D2s, where the first request after the VPN comes up can take much
+        // longer than a normal LAN/Wi-Fi connection.
+        private const val REQUEST_TIMEOUT_MS = 35_000L
+    }
 
     private val executor by lazy { GeckoWebExecutor(NightPOSApplication.geckoRuntime) }
 
@@ -72,8 +83,12 @@ class OdooAuthClient {
                     login = result.optString("username", login),
                     name = result.optString("name", login),
                 )
+            } catch (e: WebRequestError) {
+                Log.e(TAG, "OdooAuthClient.authenticate($baseUrl): GeckoView request failed (category=${e.category}, code=${e.code})", e)
+                OdooAuthResult.NetworkError("GeckoView error ${e.code} (category ${e.category})")
             } catch (t: Throwable) {
-                OdooAuthResult.NetworkError(t.message)
+                Log.e(TAG, "OdooAuthClient.authenticate($baseUrl) failed", t)
+                OdooAuthResult.NetworkError(t.message ?: t.javaClass.simpleName)
             }
         }
 
@@ -108,10 +123,19 @@ class OdooAuthClient {
             .body(payload.toString())
             .build()
 
-        val response = executor.fetch(request).poll(20_000L) ?: return null
-        if (response.statusCode !in 200..299) return null
+        val response = executor.fetch(request).poll(REQUEST_TIMEOUT_MS)
+        if (response == null) {
+            Log.w(TAG, "rpcCall($path): no response within ${REQUEST_TIMEOUT_MS}ms")
+            return null
+        }
+        if (response.statusCode !in 200..299) {
+            Log.w(TAG, "rpcCall($path): HTTP ${response.statusCode}")
+            return null
+        }
 
         val text = response.body?.use { it.bufferedReader().readText() }.orEmpty()
-        return runCatching { JSONObject(text) }.getOrNull()
+        return runCatching { JSONObject(text) }
+            .onFailure { Log.w(TAG, "rpcCall($path): failed to parse JSON response", it) }
+            .getOrNull()
     }
 }
