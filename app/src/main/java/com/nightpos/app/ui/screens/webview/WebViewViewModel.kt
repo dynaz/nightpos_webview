@@ -8,7 +8,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /** A page failed to load and we want to show a retry affordance instead of a blank WebView. */
-data class PageError(val code: Int, val description: String?, val failingUrl: String?)
+data class PageError(
+    val code: Int,
+    val description: String?,
+    val failingUrl: String?,
+    val isTimeout: Boolean = false,
+)
 
 data class WebViewUiState(
     val kind: WebViewKind = WebViewKind.POS,
@@ -49,6 +54,20 @@ class WebViewViewModel : ViewModel() {
 
     fun onPageError(code: Int, description: String?, failingUrl: String?) =
         _uiState.update { it.copy(isLoading = false, pageError = PageError(code, description, failingUrl)) }
+
+    /**
+     * Called when a page has been "loading" for too long with no [onPageFinished]
+     * or [onPageError] callback — e.g. a hung content-process request that never
+     * resolves. No-ops if the page already finished/errored by the time the
+     * timeout fires, so a normal slow-but-successful load isn't disrupted.
+     */
+    fun onLoadTimeout(url: String?) = _uiState.update {
+        if (it.isLoading && it.pageError == null) {
+            it.copy(isLoading = false, pageError = PageError(code = 0, description = null, failingUrl = url, isTimeout = true))
+        } else {
+            it
+        }
+    }
 
     fun retry() = _uiState.update { it.copy(pageError = null, isLoading = true) }
 

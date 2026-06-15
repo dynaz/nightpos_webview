@@ -3,6 +3,7 @@ package com.nightpos.app.webview
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import com.nightpos.app.util.Constants
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
@@ -19,7 +20,12 @@ class GeckoNavigationDelegate(
     private val onPageStarted: (url: String?) -> Unit,
     private val onPageFinished: (url: String?) -> Unit,
     private val onBlockedDomain: (host: String) -> Unit,
+    private val onPageLoadError: (uri: String?, error: WebRequestError) -> Unit,
 ) : GeckoSession.NavigationDelegate {
+
+    companion object {
+        private const val TAG = "NightPOS"
+    }
 
     // GeckoView 100+ signature: url + content permissions list + user-gesture flag.
     override fun onLocationChange(
@@ -59,11 +65,20 @@ class GeckoNavigationDelegate(
         }
     }
 
+    // Previously returned null with no further action: a failed navigation (DNS
+    // failure, connection reset, TLS error, etc.) left the GeckoView permanently
+    // blank with the progress bar simply disappearing — no error message, no way
+    // to retry. Surface the error (with category/code for diagnostics) so the
+    // screen can show a retry UI instead of a dead blank page.
     override fun onLoadError(
         session: GeckoSession,
         uri: String?,
         error: WebRequestError,
-    ): GeckoResult<String?> = GeckoResult.fromValue(null)
+    ): GeckoResult<String?> {
+        Log.w(TAG, "onLoadError(uri=$uri): category=${error.category}, code=${error.code}")
+        onPageLoadError(uri, error)
+        return GeckoResult.fromValue(null)
+    }
 
     private fun openExternal(uri: Uri) {
         runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }

@@ -58,6 +58,12 @@
     <string name="offline_retry">Retry</string>
     <string name="offline_auto_reconnect">Automatically checking connection…</string>
 
+    <!-- WebView page load error -->
+    <string name="webview_error_title">Failed to Load Page</string>
+    <string name="webview_error_message">A connection error occurred. Please try again.</string>
+    <string name="webview_error_timeout_message">Loading is taking too long. Please check your connection and try again.</string>
+    <string name="webview_error_detail">Detail: %1$s</string>
+
     <!-- Settings sections -->
     <string name="settings_title">Settings</string>
     <string name="settings_section_general">General</string>

@@ -4,16 +4,25 @@ import android.app.Activity
 import android.view.ViewGroup
 import android.view.Window
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,7 +48,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlinx.coroutines.delay
 import com.nightpos.app.NightPOSApplication
 import com.nightpos.app.R
 import com.nightpos.app.ui.navigation.WebViewKind
@@ -47,9 +60,17 @@ import com.nightpos.app.ui.screens.offline.OfflineScreen
 import com.nightpos.app.ui.theme.ErrorRed
 import com.nightpos.app.ui.theme.NeonPurple
 import com.nightpos.app.ui.theme.NightBlack
+import com.nightpos.app.ui.theme.TextSecondary
 import com.nightpos.app.webview.GeckoNavigationDelegate
 import com.nightpos.app.webview.GeckoProgressDelegate
 import org.mozilla.geckoview.GeckoView
+
+/**
+ * If a page is still "loading" after this long with no progress-delegate completion
+ * or navigation-delegate error callback, treat it as hung (e.g. a content-process
+ * request that never resolves) and show the retry screen instead of spinning forever.
+ */
+private const val LOAD_TIMEOUT_MS = 45_000L
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +106,13 @@ fun WebViewScreen(
             onPageStarted = { viewModel.onPageStarted() },
             onPageFinished = { viewModel.onPageFinished(false) },
             onBlockedDomain = { host -> viewModel.onBlockedDomain(host) },
+            onPageLoadError = { failingUrl, error ->
+                viewModel.onPageError(
+                    code = error.code,
+                    description = "category ${error.category}",
+                    failingUrl = failingUrl,
+                )
+            },
         )
     }
 
@@ -124,6 +152,15 @@ fun WebViewScreen(
         if (current?.substringBefore('#') != url.substringBefore('#')) {
             session?.loadUri(url)
             viewModel.setCurrentUrl(url)
+        }
+    }
+
+    // Watchdog for hung loads: relaunches whenever isLoading flips to true (initial
+    // load, reload, or retry) and is cancelled as soon as it flips back to false.
+    LaunchedEffect(uiState.isLoading) {
+        if (uiState.isLoading) {
+            delay(LOAD_TIMEOUT_MS)
+            viewModel.onLoadTimeout(url)
         }
     }
 
@@ -170,6 +207,14 @@ fun WebViewScreen(
             ) {
                 when {
                     !isOnline -> OfflineScreen(onRetry = { session?.reload() })
+
+                    uiState.pageError != null -> WebViewErrorScreen(
+                        error = uiState.pageError!!,
+                        onRetry = {
+                            viewModel.retry()
+                            session?.loadUri(url)
+                        },
+                    )
 
                     else -> {
                         PullToRefreshBox(
@@ -256,6 +301,77 @@ private fun WebViewTopBar(
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = NightBlack),
     )
+}
+
+/**
+ * Shown instead of a blank GeckoView when [PageError] is set — either a real
+ * navigation error ([GeckoNavigationDelegate]'s onPageLoadError) or a load that never
+ * finished within [LOAD_TIMEOUT_MS]. Includes the GeckoView error code/category (when
+ * known) so staff can relay something actionable without needing adb logcat access.
+ */
+@Composable
+private fun WebViewErrorScreen(error: PageError, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(modifier = modifier.fillMaxSize(), color = NightBlack) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ErrorOutline,
+                contentDescription = null,
+                tint = ErrorRed,
+                modifier = Modifier.size(64.dp),
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = stringResource(R.string.webview_error_title),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = if (error.isTimeout) {
+                    stringResource(R.string.webview_error_timeout_message)
+                } else {
+                    stringResource(R.string.webview_error_message)
+                },
+                style = MaterialTheme.typography.bodyLarge,
+                color = TextSecondary,
+                textAlign = TextAlign.Center,
+            )
+
+            if (!error.isTimeout) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.webview_error_detail, "${error.code} (${error.description})"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = onRetry,
+                colors = ButtonDefaults.buttonColors(containerColor = NeonPurple),
+                modifier = Modifier.height(56.dp),
+            ) {
+                Icon(Icons.Filled.Refresh, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(R.string.offline_retry), style = MaterialTheme.typography.titleMedium)
+            }
+        }
+    }
 }
 
 @Composable
