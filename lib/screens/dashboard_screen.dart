@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../theme/theme.dart';
 import '../providers/app_state.dart';
+import '../providers/settings_provider.dart';
 import '../services/network_diagnostics.dart';
+import '../services/webview_config.dart';
 import 'offline_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -36,14 +38,12 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final serverUrl = context.read<SettingsProvider>().serverUrl;
+
     return Consumer<NetworkDiagnostics>(
       builder: (context, networkDiagnostics, _) {
         if (!networkDiagnostics.isOnline) {
-          return OfflineScreen(
-            onRetry: () {
-              // Network diagnostics will automatically update when connection is restored
-            },
-          );
+          return OfflineScreen(onRetry: () {});
         }
 
         return Scaffold(
@@ -63,80 +63,80 @@ class DashboardScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               const SizedBox(height: 8),
-          _buildMenuCard(
-            context,
-            icon: Icons.shopping_cart,
-            title: 'Open POS',
-            description: 'Open the storefront sales screen',
-            onTap: () {
-              context.go(
-                '/dashboard/webview',
-                extra: {
-                  'title': 'POS',
-                  'url': 'https://soho.nightpos.com/pos/ui',
+              _buildMenuCard(
+                context,
+                icon: Icons.shopping_cart,
+                title: 'Open POS',
+                description: 'Open the storefront sales screen',
+                onTap: () {
+                  context.go(
+                    '/dashboard/webview',
+                    extra: {
+                      'title': 'POS',
+                      'url': WebViewConfig.buildPosUrl(serverUrl),
+                    },
+                  );
                 },
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildMenuCard(
-            context,
-            icon: Icons.bar_chart,
-            title: 'Reports',
-            description: 'View sales reports and summaries',
-            onTap: () {
-              context.go(
-                '/dashboard/webview',
-                extra: {
-                  'title': 'Reports',
-                  'url': 'https://soho.nightpos.com/web',
+              ),
+              const SizedBox(height: 12),
+              _buildMenuCard(
+                context,
+                icon: Icons.bar_chart,
+                title: 'Reports',
+                description: 'View sales reports and summaries',
+                onTap: () {
+                  context.go(
+                    '/dashboard/webview',
+                    extra: {
+                      'title': 'Reports',
+                      'url': WebViewConfig.buildModuleUrl(serverUrl, 'web'),
+                    },
+                  );
                 },
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildMenuCard(
-            context,
-            icon: Icons.people,
-            title: 'Customers',
-            description: 'Manage customer information',
-            onTap: () {
-              context.go(
-                '/dashboard/webview',
-                extra: {
-                  'title': 'Customers',
-                  'url': 'https://soho.nightpos.com/web',
+              ),
+              const SizedBox(height: 12),
+              _buildMenuCard(
+                context,
+                icon: Icons.people,
+                title: 'Customers',
+                description: 'Manage customer information',
+                onTap: () {
+                  context.go(
+                    '/dashboard/webview',
+                    extra: {
+                      'title': 'Customers',
+                      'url': WebViewConfig.buildModuleUrl(serverUrl, 'web'),
+                    },
+                  );
                 },
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildMenuCard(
-            context,
-            icon: Icons.inventory,
-            title: 'Products',
-            description: 'Manage products and listings',
-            onTap: () {
-              context.go(
-                '/dashboard/webview',
-                extra: {
-                  'title': 'Products',
-                  'url': 'https://soho.nightpos.com/web',
+              ),
+              const SizedBox(height: 12),
+              _buildMenuCard(
+                context,
+                icon: Icons.inventory,
+                title: 'Products',
+                description: 'Manage products and listings',
+                onTap: () {
+                  context.go(
+                    '/dashboard/webview',
+                    extra: {
+                      'title': 'Products',
+                      'url': WebViewConfig.buildModuleUrl(serverUrl, 'web'),
+                    },
+                  );
                 },
-              );
-            },
+              ),
+              const SizedBox(height: 12),
+              _buildMenuCard(
+                context,
+                icon: Icons.logout,
+                title: 'Log Out',
+                description: 'Clear session and log out',
+                onTap: () => _handleLogout(context),
+                isDestructive: true,
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          _buildMenuCard(
-            context,
-            icon: Icons.logout,
-            title: 'Log Out',
-            description: 'Clear session and log out',
-            onTap: () => _handleLogout(context),
-            isDestructive: true,
-          ),
-        ],
-      ),
         );
       },
     );
@@ -185,7 +185,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(
+              const Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
                 color: NightPOSColors.textSecondary,
