@@ -1,0 +1,67 @@
+name: nightpos_ios
+description: NightPOS Soho - Point of sale system for restaurants and nightclubs. iOS version built with Flutter.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.0.0
+  flutter: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # WebView for Odoo POS
+  webview_flutter: ^4.4.0
+  webview_flutter_wkwebview: ^3.9.0
+
+  # Networking
+  http: ^1.1.0
+
+  # State management
+  provider: ^6.0.0
+
+  # Local storage
+  shared_preferences: ^2.2.0
+  flutter_secure_storage: ^9.0.0
+
+  # Localization & internationalization
+  intl: ^0.19.0
+
+  # Permissions
+  permission_handler: ^11.4.0
+
+  # Platform channels for native features
+  # (kiosk mode, keep screen on, etc.)
+
+  # Navigation
+  go_router: ^12.0.0
+
+  # UI
+  cupertino_icons: ^1.0.2
+
+  # Connectivity detection
+  connectivity_plus: ^5.0.0
+
+  # Screen sleep prevention
+  wakelock_plus: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+  # Localized strings (generated from .arb files)
+  # generate: true
+
+# App configuration
+# minSdk: 21 (in android/app/build.gradle)
+# iosDeploymentTarget: 12.0 (in ios/Podfile)
