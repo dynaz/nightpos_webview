@@ -40,21 +40,45 @@ class _LoginScreenState extends State<LoginScreen> {
     final settingsProvider = context.read<SettingsProvider>();
     final appState = context.read<AppState>();
 
+    final serverUrl = _serverUrlController.text.trim();
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (serverUrl.isEmpty) {
+      loginProvider.setError('Please enter a server URL');
+      return;
+    }
+
+    if (username.isEmpty) {
+      loginProvider.setError('Please enter your username');
+      return;
+    }
+
+    if (password.isEmpty) {
+      loginProvider.setError('Please enter your password');
+      return;
+    }
+
+    // Initialize OdooClient with server URL
+    loginProvider.initializeOdooClient(serverUrl);
+
+    // Perform login
     final success = await loginProvider.login(
-      serverUrl: _serverUrlController.text,
-      username: _usernameController.text,
-      password: _passwordController.text,
+      serverUrl: serverUrl,
+      username: username,
+      password: password,
     );
 
     if (success && mounted) {
       // Save server URL to settings
-      await settingsProvider.setServerUrl(_serverUrlController.text);
+      await settingsProvider.setServerUrl(serverUrl);
 
       // Update app state
       appState.setLoggedIn(
         true,
-        username: _usernameController.text,
-        serverUrl: _serverUrlController.text,
+        username: username,
+        serverUrl: serverUrl,
+        sessionToken: loginProvider.sessionId,
       );
 
       // Navigate to dashboard

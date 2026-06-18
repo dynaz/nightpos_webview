@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../providers/settings_provider.dart';
+import '../providers/login_provider.dart';
 import '../theme/theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -19,11 +21,33 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateToNextScreen() async {
-    await Future.delayed(const Duration(seconds: 2));
-
     if (!mounted) return;
 
     final appState = context.read<AppState>();
+    final settingsProvider = context.read<SettingsProvider>();
+    final loginProvider = context.read<LoginProvider>();
+
+    // Try to restore previous session
+    if (!appState.isLoggedIn) {
+      final serverUrl = settingsProvider.serverUrl;
+      final restored = await loginProvider.restoreSession(serverUrl);
+
+      if (restored && mounted) {
+        appState.setLoggedIn(
+          true,
+          username: loginProvider._state.successMessage ?? 'User',
+          serverUrl: serverUrl,
+        );
+      }
+    }
+
+    if (!mounted) return;
+
+    // Add a minimum splash screen duration for visual consistency
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+
     if (appState.isLoggedIn) {
       context.go('/dashboard');
     } else {

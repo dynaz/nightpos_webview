@@ -71,6 +71,10 @@ class NightPOSApp extends StatelessWidget {
 
         return null;
       },
+      onException: (context, state, router) {
+        // Fallback for unknown routes
+        router.go('/splash');
+      },
     );
   }
 }

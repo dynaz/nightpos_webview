@@ -5,6 +5,7 @@ import 'providers/app_state.dart';
 import 'providers/settings_provider.dart';
 import 'providers/login_provider.dart';
 import 'providers/webview_provider.dart';
+import 'services/network_diagnostics.dart';
 import 'app.dart';
 
 void main() async {
@@ -23,6 +24,9 @@ void main() async {
         ),
         ChangeNotifierProvider<AppState>(
           create: (_) => AppState(),
+        ),
+        ChangeNotifierProvider<NetworkDiagnostics>(
+          create: (_) => NetworkDiagnostics(),
         ),
         // Screen-level state
         ChangeNotifierProvider<LoginProvider>(

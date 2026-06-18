@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../theme/theme.dart';
 import '../providers/app_state.dart';
+import '../services/network_diagnostics.dart';
+import 'offline_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -34,23 +36,33 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: NightPOSColors.nightBlack,
-      appBar: AppBar(
-        title: const Text('NightPOS Soho'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => context.go('/dashboard/settings'),
-            tooltip: 'Settings',
+    return Consumer<NetworkDiagnostics>(
+      builder: (context, networkDiagnostics, _) {
+        if (!networkDiagnostics.isOnline) {
+          return OfflineScreen(
+            onRetry: () {
+              // Network diagnostics will automatically update when connection is restored
+            },
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: NightPOSColors.nightBlack,
+          appBar: AppBar(
+            title: const Text('NightPOS Soho'),
+            elevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () => context.go('/dashboard/settings'),
+                tooltip: 'Settings',
+              ),
+            ],
           ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const SizedBox(height: 8),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const SizedBox(height: 8),
           _buildMenuCard(
             context,
             icon: Icons.shopping_cart,
@@ -125,6 +137,8 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
+        );
+      },
     );
   }
 
