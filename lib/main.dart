@@ -6,6 +6,8 @@ import 'providers/settings_provider.dart';
 import 'providers/login_provider.dart';
 import 'providers/webview_provider.dart';
 import 'services/network_diagnostics.dart';
+import 'services/localization_service.dart';
+import 'services/platform_service.dart';
 import 'app.dart';
 
 void main() async {
@@ -14,6 +16,12 @@ void main() async {
   // Initialize settings
   final settingsProvider = SettingsProvider();
   await settingsProvider.init();
+
+  // Initialize localization from saved language preference
+  LocalizationService.setLanguage(settingsProvider.language);
+
+  // Set initial status bar style
+  PlatformService.setStatusBarStyle(light: true);
 
   runApp(
     MultiProvider(

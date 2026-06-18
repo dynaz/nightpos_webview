@@ -8,6 +8,8 @@ import '../providers/webview_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/app_state.dart';
 import '../services/network_diagnostics.dart';
+import '../services/platform_service.dart';
+import '../services/localization_service.dart';
 import 'offline_screen.dart';
 
 const int _loadTimeoutMs = 45000;
@@ -34,12 +36,29 @@ class _WebViewScreenState extends State<WebViewScreen> {
   void initState() {
     super.initState();
     _initWebView();
+    _applyPlatformSettings();
   }
 
   @override
   void dispose() {
     _loadTimeoutTimer?.cancel();
+    _restorePlatformSettings();
     super.dispose();
+  }
+
+  void _applyPlatformSettings() {
+    final settings = context.read<SettingsProvider>();
+    if (settings.keepScreenOn) {
+      PlatformService.setKeepScreenOn(true);
+    }
+    if (settings.kioskMode) {
+      PlatformService.setKioskMode(true);
+    }
+  }
+
+  void _restorePlatformSettings() {
+    PlatformService.setKeepScreenOn(false);
+    PlatformService.setKioskMode(false);
   }
 
   void _initWebView() {
@@ -252,7 +271,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              error.isTimeout ? 'Loading is taking too long' : 'Failed to Load Page',
+              LocalizationService.tr(error.isTimeout ? 'webview_error_timeout_message' : 'webview_error_title'),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -260,9 +279,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              error.isTimeout
-                  ? 'Please check your connection and try again.'
-                  : 'A connection error occurred. Please try again.',
+              LocalizationService.tr(error.isTimeout ? 'webview_error_timeout_message' : 'webview_error_message'),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: NightPOSColors.textSecondary,
                   ),
@@ -271,7 +288,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
             if (!error.isTimeout) ...[
               const SizedBox(height: 4),
               Text(
-                'Detail: ${error.code} (${error.description})',
+                LocalizationService.tr('webview_error_detail', '${error.code} (${error.description})'),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: NightPOSColors.textSecondary,
                     ),
@@ -285,7 +302,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 onPressed: _handleRetry,
                 icon: const Icon(Icons.refresh),
                 label: Text(
-                  'Retry',
+                  LocalizationService.tr('offline_retry'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),

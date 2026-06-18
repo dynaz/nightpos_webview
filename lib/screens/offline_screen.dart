@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/theme.dart';
+import '../services/localization_service.dart';
 
 class OfflineScreen extends StatelessWidget {
   final VoidCallback onRetry;
@@ -20,32 +21,42 @@ class OfflineScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.wifi_off,
                   color: NightPOSColors.errorRed,
                   size: 64,
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'No Internet Connection',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  LocalizationService.tr('offline_title'),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Please check your network connection and try again',
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  LocalizationService.tr('offline_message'),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: NightPOSColors.textSecondary,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                SizedBox(
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh),
+                    label: Text(
+                      LocalizationService.tr('offline_retry'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Automatically checking connection...',
+                  LocalizationService.tr('offline_auto_reconnect'),
                   style: Theme.of(context).textTheme.bodySmall,
                   textAlign: TextAlign.center,
                 ),

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../theme/theme.dart';
 import '../providers/settings_provider.dart';
+import '../services/localization_service.dart';
+import '../services/platform_service.dart';
+import '../services/network_diagnostics.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -13,25 +17,27 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: NightPOSColors.surface,
-        title: const Text('Server URL'),
+        title: Text(LocalizationService.tr('settings_server_url')),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
             hintText: 'https://soho.nightpos.com',
             labelText: 'Server URL',
           ),
+          keyboardType: TextInputType.url,
+          autocorrect: false,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(LocalizationService.tr('logout_cancel')),
           ),
           TextButton(
             onPressed: () {
-              settings.setServerUrl(controller.text);
+              settings.setServerUrl(controller.text.trim());
               Navigator.pop(context);
             },
-            child: const Text('Save'),
+            child: Text(LocalizationService.tr('action_save')),
           ),
         ],
       ),
@@ -43,82 +49,101 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: NightPOSColors.surface,
-        title: const Text('Select Language'),
+        title: Text(LocalizationService.tr('language_dialog_title')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: const Text('English'),
-              value: 'en',
+          children: LocalizationService.availableLanguages.map((lang) {
+            return RadioListTile<String>(
+              title: Text(lang.name),
+              value: lang.code,
               groupValue: settings.language,
+              activeColor: NightPOSColors.neonPurple,
               onChanged: (value) {
                 if (value != null) {
                   settings.setLanguage(value);
+                  LocalizationService.setLanguage(value);
                   Navigator.pop(context);
                 }
               },
-            ),
-            RadioListTile<String>(
-              title: const Text('ไทย (Thai)'),
-              value: 'th',
-              groupValue: settings.language,
-              onChanged: (value) {
-                if (value != null) {
-                  settings.setLanguage(value);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-          ],
+            );
+          }).toList(),
         ),
       ),
     );
   }
 
-  void _showDiagnostics(BuildContext context) {
+  void _showClearDataDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: NightPOSColors.surface,
-        title: const Text('Diagnostics'),
+        title: Text(LocalizationService.tr('settings_clear_data')),
+        content: Text(LocalizationService.tr('settings_clear_data_desc')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(LocalizationService.tr('logout_cancel')),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(LocalizationService.tr('settings_clear_data_success'))),
+              );
+            },
+            child: Text(
+              LocalizationService.tr('logout_confirm'),
+              style: const TextStyle(color: NightPOSColors.errorRed),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDiagnostics(BuildContext context) async {
+    final networkDiagnostics = context.read<NetworkDiagnostics>();
+    final diagnosticsInfo = await networkDiagnostics.getDiagnosticsInfo();
+
+    final fullInfo = '''
+App Information:
+- App Name: NightPOS Soho
+- Version: 1.0.0+1
+- Platform: iOS (Flutter)
+- WebView Engine: WKWebView
+
+$diagnosticsInfo''';
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: NightPOSColors.surface,
+        title: Text(LocalizationService.tr('diagnostics_title')),
         content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'App Information:',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              const Text('App Name: NightPOS Soho'),
-              const Text('Version: 1.0.0'),
-              const Text('Build: flutter-ios'),
-              const SizedBox(height: 16),
-              Text(
-                'System Information:',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              const Text('Platform: iOS'),
-              const Text('Status: Running'),
-            ],
+          child: SelectableText(
+            fullInfo,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontFamily: 'monospace',
+                  height: 1.5,
+                ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () {
-              // Copy diagnostics to clipboard
+              Clipboard.setData(ClipboardData(text: fullInfo));
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Diagnostics copied to clipboard')),
+                SnackBar(content: Text(LocalizationService.tr('diagnostics_copied'))),
               );
             },
-            child: const Text('Copy'),
+            child: Text(LocalizationService.tr('diagnostics_copy')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(LocalizationService.tr('action_close')),
           ),
         ],
       ),
@@ -130,7 +155,7 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: NightPOSColors.nightBlack,
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(LocalizationService.tr('settings_title')),
         elevation: 0,
       ),
       body: Consumer<SettingsProvider>(
@@ -138,83 +163,92 @@ class SettingsScreen extends StatelessWidget {
           return ListView(
             children: [
               // General Section
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                child: Text(
-                  'General',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              Card(
-                color: NightPOSColors.surface,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              _buildSectionHeader(context, LocalizationService.tr('settings_section_general')),
+              _buildCard(
                 child: ListTile(
-                  title: const Text('Server URL'),
-                  subtitle: Text(settings.serverUrl),
+                  title: Text(LocalizationService.tr('settings_server_url')),
+                  subtitle: Text(
+                    settings.serverUrl,
+                    style: const TextStyle(color: NightPOSColors.textSecondary),
+                  ),
                   trailing: const Icon(Icons.edit, color: NightPOSColors.textSecondary),
                   onTap: () => _showServerUrlDialog(context, settings),
                 ),
               ),
-              Card(
-                color: NightPOSColors.surface,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              _buildCard(
                 child: ListTile(
-                  title: const Text('Language'),
-                  subtitle: Text(settings.language == 'en' ? 'English' : 'ไทย (Thai)'),
+                  title: Text(LocalizationService.tr('settings_language')),
+                  subtitle: Text(
+                    settings.language == 'en' ? 'English' : 'ไทย (Thai)',
+                    style: const TextStyle(color: NightPOSColors.textSecondary),
+                  ),
                   trailing: const Icon(Icons.chevron_right, color: NightPOSColors.textSecondary),
                   onTap: () => _showLanguageDialog(context, settings),
                 ),
               ),
+
               // POS Screen Section
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                child: Text(
-                  'POS Screen',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              Card(
-                color: NightPOSColors.surface,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              _buildSectionHeader(context, LocalizationService.tr('settings_section_pos')),
+              _buildCard(
                 child: SwitchListTile(
-                  title: const Text('Kiosk Mode'),
-                  subtitle: const Text('Hide system bars and lock the screen'),
+                  title: Text(LocalizationService.tr('settings_kiosk_mode')),
+                  subtitle: Text(
+                    LocalizationService.tr('settings_kiosk_mode_desc'),
+                    style: const TextStyle(color: NightPOSColors.textSecondary),
+                  ),
                   value: settings.kioskMode,
-                  onChanged: (value) => settings.setKioskMode(value),
+                  activeColor: NightPOSColors.neonPurple,
+                  onChanged: (value) {
+                    settings.setKioskMode(value);
+                    PlatformService.setKioskMode(value);
+                  },
                 ),
               ),
-              Card(
-                color: NightPOSColors.surface,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              _buildCard(
                 child: SwitchListTile(
-                  title: const Text('Keep Screen On'),
-                  subtitle: const Text("Screen won't turn off while POS is open"),
+                  title: Text(LocalizationService.tr('settings_keep_screen_on')),
+                  subtitle: Text(
+                    LocalizationService.tr('settings_keep_screen_on_desc'),
+                    style: const TextStyle(color: NightPOSColors.textSecondary),
+                  ),
                   value: settings.keepScreenOn,
-                  onChanged: (value) => settings.setKeepScreenOn(value),
+                  activeColor: NightPOSColors.neonPurple,
+                  onChanged: (value) {
+                    settings.setKeepScreenOn(value);
+                    PlatformService.setKeepScreenOn(value);
+                  },
                 ),
               ),
-              // About Section
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                child: Text(
-                  'About',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              Card(
-                color: NightPOSColors.surface,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: const ListTile(
-                  title: Text('App Version'),
-                  subtitle: Text('1.0.0'),
-                ),
-              ),
-              Card(
-                color: NightPOSColors.surface,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              _buildCard(
                 child: ListTile(
-                  title: const Text('Diagnostics'),
-                  subtitle: const Text('View system info and logs'),
+                  title: Text(LocalizationService.tr('settings_clear_data')),
+                  subtitle: Text(
+                    LocalizationService.tr('settings_clear_data_desc'),
+                    style: const TextStyle(color: NightPOSColors.textSecondary),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, color: NightPOSColors.textSecondary),
+                  onTap: () => _showClearDataDialog(context),
+                ),
+              ),
+
+              // About Section
+              _buildSectionHeader(context, LocalizationService.tr('settings_section_about')),
+              _buildCard(
+                child: ListTile(
+                  title: Text(LocalizationService.tr('settings_version')),
+                  subtitle: const Text(
+                    '1.0.0+1',
+                    style: TextStyle(color: NightPOSColors.textSecondary),
+                  ),
+                ),
+              ),
+              _buildCard(
+                child: ListTile(
+                  title: Text(LocalizationService.tr('diagnostics_title')),
+                  subtitle: Text(
+                    LocalizationService.tr('diagnostics_copy'),
+                    style: const TextStyle(color: NightPOSColors.textSecondary),
+                  ),
                   trailing: const Icon(Icons.chevron_right, color: NightPOSColors.textSecondary),
                   onTap: () => _showDiagnostics(context),
                 ),
@@ -224,6 +258,26 @@ class SettingsScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: NightPOSColors.neonPurple,
+            ),
+      ),
+    );
+  }
+
+  Widget _buildCard({required Widget child}) {
+    return Card(
+      color: NightPOSColors.surface,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: child,
     );
   }
 }
