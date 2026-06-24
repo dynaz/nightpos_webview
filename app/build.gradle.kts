@@ -9,7 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nightpos.app"
+        applicationId = "nightpos.geckoview"
         minSdk = 21          // floor set by arm32 flavor; arm64 overrides to 26
         targetSdk = 35
         versionCode = 15
