@@ -70,6 +70,33 @@ class SunmiPrinterConnection(private val context: Context) {
         return runCatching { svc.sendRAWData(bytes, null) }.isSuccess
     }
 
+    /**
+     * Detects the device's inner printer paper width.
+     *
+     * Primary: [SunmiPrinterService.getPrinterPaper] returns 1 (58mm) or 2 (80mm).
+     * Fallback: [android.os.Build.MODEL] pattern — T2 / T2s are 80mm; all others 58mm.
+     *
+     * Call after [awaitReady] to ensure the service is connected.
+     */
+    fun getPaperWidthMm(): Int {
+        runCatching {
+            val paper = service?.getPrinterPaper() ?: return detectFromModel()
+            return when (paper) {
+                1, 58 -> 58
+                2, 80 -> 80
+                else -> detectFromModel()
+            }
+        }
+        return detectFromModel()
+    }
+
+    private fun detectFromModel(): Int {
+        val model = android.os.Build.MODEL.uppercase(java.util.Locale.ROOT)
+        // T2 and T2s ship with an 80mm head; T2 Mini and T2 Lite are 58mm.
+        return if ((model == "T2" || model.startsWith("T2S") || model.startsWith("SUNMI_T2"))
+            && !model.contains("MINI") && !model.contains("LITE")) 80 else 58
+    }
+
     companion object {
         private const val CONNECT_TIMEOUT_MS = 5_000L
         private const val POLL_INTERVAL_MS = 50L

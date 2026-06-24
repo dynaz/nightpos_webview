@@ -5,10 +5,15 @@ import android.app.Application
 import android.content.Context
 import android.os.Process
 import android.util.Log
+import com.nightpos.app.data.PreferencesManager
 import com.nightpos.app.print.PrintHttpServer
 import com.nightpos.app.print.PrintServiceEnabler
 import com.nightpos.app.print.SunmiJsBridge
 import com.nightpos.app.print.SunmiPrinterConnection
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
 import org.mozilla.geckoview.StorageController
@@ -38,6 +43,8 @@ class NightPOSApplication : Application() {
 
         printerConnection = SunmiPrinterConnection(this).also { it.bind() }
         jsBridge = SunmiJsBridge(this).also { it.bindPrinter() }
+
+        autoDetectPaperWidth()
 
         runCatching {
             PrintHttpServer(printerConnection, this).start()
@@ -90,6 +97,26 @@ class NightPOSApplication : Application() {
                 geckoRuntime.storageController.clearData(StorageController.ClearFlags.ALL_CACHES)
                 Log.i("NightPOS", "onTrimMemory($level): cleared GeckoView network/image caches")
             }.onFailure { Log.w("NightPOS", "onTrimMemory clearData failed: ${it.message}") }
+        }
+    }
+
+    // Runs once on first launch: waits for the printer service to connect,
+    // reads the hardware paper width, and saves it as the default.
+    // Skipped on subsequent launches once the user (or a prior auto-detect) has set a value.
+    private fun autoDetectPaperWidth() {
+        val prefs = PreferencesManager(this)
+        CoroutineScope(Dispatchers.IO).launch {
+            val alreadySet = prefs.isPaperWidthSet.first()
+            if (alreadySet) return@launch
+
+            val ready = printerConnection.awaitReady(5_000)
+            if (!ready) {
+                Log.w("NightPOS", "autoDetectPaperWidth: printer not ready, skipping")
+                return@launch
+            }
+            val widthMm = printerConnection.getPaperWidthMm()
+            prefs.setPrinterPaperWidthMm(widthMm)
+            Log.i("NightPOS", "autoDetectPaperWidth: detected ${widthMm}mm")
         }
     }
 

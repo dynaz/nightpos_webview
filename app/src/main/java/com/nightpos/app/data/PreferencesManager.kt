@@ -48,6 +48,12 @@ class PreferencesManager(private val context: Context) {
         prefs[Keys.AUTO_REOPEN_POS] ?: false
     }
 
+    // True once a paper width has been saved (auto-detected or user-set).
+    // Used to avoid overwriting the user's manual choice on reconnect.
+    val isPaperWidthSet: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.PRINTER_PAPER_WIDTH_MM] != null
+    }
+
     val printerPaperWidthMm: Flow<Int> = context.dataStore.data.map { prefs ->
         prefs[Keys.PRINTER_PAPER_WIDTH_MM] ?: 58
     }
