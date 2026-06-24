@@ -6,18 +6,23 @@ on:
   workflow_dispatch:
     inputs:
       run_name:
-        description: 'Run name (optional, e.g. "fix ABI for D2s Plus")'
+        description: 'Run name (optional, e.g. "fix D2s Plus crash")'
         required: false
         default: ''
       flavor:
-        description: 'Flavor — pick by: adb shell getprop ro.product.cpu.abi'
+        description: |
+          Device flavor:
+            arm32   → Sunmi T1, T2 (armeabi-v7a, GeckoView)
+            d2splus → Sunmi D2s Plus (armeabi-v7a, system WebView, Rockchip RK30)
+            arm64   → Sunmi D2s original (arm64-v8a, GeckoView)
         required: true
-        default: 'arm32'
+        default: 'd2splus'
         type: choice
         options:
           - arm32
+          - d2splus
           - arm64
-          - both
+          - all
 
 jobs:
   build:
@@ -43,24 +48,36 @@ jobs:
           key: gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
-      - name: Build arm32 APK (armeabi-v7a — T1, T2, D2s Plus)
-        if: ${{ inputs.flavor == 'arm32' || inputs.flavor == 'both' }}
+      - name: Build arm32 APK (T1, T2 — armeabi-v7a + GeckoView)
+        if: ${{ inputs.flavor == 'arm32' || inputs.flavor == 'all' }}
         run: ./gradlew assembleArm32Release --no-daemon
 
-      - name: Build arm64 APK (arm64-v8a — D2s original)
-        if: ${{ inputs.flavor == 'arm64' || inputs.flavor == 'both' }}
+      - name: Build d2splus APK (D2s Plus — armeabi-v7a + system WebView)
+        if: ${{ inputs.flavor == 'd2splus' || inputs.flavor == 'all' }}
+        run: ./gradlew assembleD2splusRelease --no-daemon
+
+      - name: Build arm64 APK (D2s original — arm64-v8a + GeckoView)
+        if: ${{ inputs.flavor == 'arm64' || inputs.flavor == 'all' }}
         run: ./gradlew assembleArm64Release --no-daemon
 
       - name: Upload arm32 APK
-        if: ${{ inputs.flavor == 'arm32' || inputs.flavor == 'both' }}
+        if: ${{ inputs.flavor == 'arm32' || inputs.flavor == 'all' }}
         uses: actions/upload-artifact@v4
         with:
           name: nightpos-arm32
           path: app/build/outputs/apk/arm32/release/*.apk
           retention-days: 30
 
+      - name: Upload d2splus APK
+        if: ${{ inputs.flavor == 'd2splus' || inputs.flavor == 'all' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightpos-d2splus
+          path: app/build/outputs/apk/d2splus/release/*.apk
+          retention-days: 30
+
       - name: Upload arm64 APK
-        if: ${{ inputs.flavor == 'arm64' || inputs.flavor == 'both' }}
+        if: ${{ inputs.flavor == 'arm64' || inputs.flavor == 'all' }}
         uses: actions/upload-artifact@v4
         with:
           name: nightpos-arm64

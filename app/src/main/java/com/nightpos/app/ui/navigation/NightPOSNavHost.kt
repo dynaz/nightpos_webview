@@ -23,6 +23,7 @@ import com.nightpos.app.ui.screens.dashboard.DashboardViewModel
 import com.nightpos.app.ui.screens.settings.SettingsScreen
 import com.nightpos.app.ui.screens.settings.SettingsViewModel
 import com.nightpos.app.ui.screens.splash.SplashScreen
+import com.nightpos.app.ui.screens.webview.SystemWebViewScreen
 import com.nightpos.app.ui.screens.webview.WebViewScreen
 import com.nightpos.app.ui.screens.webview.WebViewViewModel
 import com.nightpos.app.twa.TwaLauncherActivity
@@ -30,14 +31,15 @@ import com.nightpos.app.util.Constants
 import org.mozilla.geckoview.GeckoView
 
 /**
- * Single-Activity navigation graph. A single shared [GeckoView] (backed by one
- * GeckoSession) is created in [com.nightpos.app.MainActivity] and threaded through
- * every screen that needs it so the Odoo SPA session survives tab switches.
+ * Single-Activity navigation graph. Either a shared [GeckoView] (arm32/arm64 flavors)
+ * or a shared system [android.webkit.WebView] (d2splus flavor) is threaded through
+ * every screen so the Odoo SPA session survives tab switches.
  */
 @Composable
 fun NightPOSNavHost(
     appContainer: AppContainer,
-    sharedGeckoView: GeckoView,
+    sharedGeckoView: GeckoView?,
+    sharedSystemWebView: android.webkit.WebView?,
     isOnline: Boolean,
     navController: NavHostController = rememberNavController(),
 ) {
@@ -52,16 +54,17 @@ fun NightPOSNavHost(
     // AfroRoom, …) back via window.prompt("nightpos:posConfigs", …) so the
     // "Open POS" FAB circles are populated before the user opens any WebView.
     LaunchedEffect(settingsState.serverUrl) {
-        val session = sharedGeckoView.session ?: run {
-            android.util.Log.w("NightPOS", "prefetch: session is null, skipping")
+        val session = sharedGeckoView?.session ?: run {
+            android.util.Log.w("NightPOS", "prefetch: no GeckoView session (d2splus flavor), skipping")
             return@LaunchedEffect
         }
+        val runtime = NightPOSApplication.geckoRuntime ?: return@LaunchedEffect
         val baseUrl = settingsState.serverUrl.ifBlank { Constants.DEFAULT_BASE_URL }
         android.util.Log.i("NightPOS", "prefetch: opening session and loading $baseUrl/npos")
         // Ensure the prompt delegate is wired so posConfigs messages are received
         session.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
         if (!session.isOpen) {
-            session.open(NightPOSApplication.geckoRuntime)
+            session.open(runtime)
         }
         // A lightweight page load — pos-configs.js content script will fetch
         // /web/dataset/call_kw, parse pos.config records and emit to the bridge
@@ -133,7 +136,8 @@ fun NightPOSNavHost(
                     }
                 },
                 onLoggedOut = {
-                    sharedGeckoView.session?.loadUri("about:blank")
+                    sharedGeckoView?.session?.loadUri("about:blank")
+                    sharedSystemWebView?.loadUrl("about:blank")
                 },
             )
         }
@@ -174,23 +178,43 @@ fun NightPOSNavHost(
                 WebViewKind.POS_SETTINGS -> Constants.posSettingsUrl(baseUrl)
             }
 
-            WebViewScreen(
-                kind = kind,
-                title = title,
-                url = url,
-                geckoView = sharedGeckoView,
-                viewModel = webViewViewModel,
-                isOnline = isOnline,
-                kioskModeEnabled = settingsState.kioskModeEnabled && kind == WebViewKind.POS,
-                keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
-                onExit = {
-                    navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
-                },
-                onHome = {
-                    navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
-                },
-                onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
-            )
+            if (BuildConfig.USE_GECKO) {
+                WebViewScreen(
+                    kind = kind,
+                    title = title,
+                    url = url,
+                    geckoView = sharedGeckoView!!,
+                    viewModel = webViewViewModel,
+                    isOnline = isOnline,
+                    kioskModeEnabled = settingsState.kioskModeEnabled && kind == WebViewKind.POS,
+                    keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
+                    onExit = {
+                        navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    },
+                    onHome = {
+                        navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    },
+                    onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
+                )
+            } else {
+                SystemWebViewScreen(
+                    kind = kind,
+                    title = title,
+                    url = url,
+                    webView = sharedSystemWebView!!,
+                    viewModel = webViewViewModel,
+                    isOnline = isOnline,
+                    kioskModeEnabled = settingsState.kioskModeEnabled && kind == WebViewKind.POS,
+                    keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
+                    onExit = {
+                        navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    },
+                    onHome = {
+                        navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    },
+                    onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
+                )
+            }
         }
 
         // Outlet WebView — custom URL passed directly (e.g. specific POS outlet)
@@ -210,29 +234,49 @@ fun NightPOSNavHost(
                 key = "outlet-${outletUrl.hashCode()}",
                 factory = appContainer.webViewViewModelFactory(),
             )
-            WebViewScreen(
-                kind = WebViewKind.POS,
-                title = outletTitle,
-                url = outletUrl,
-                geckoView = sharedGeckoView,
-                viewModel = outletViewModel,
-                isOnline = isOnline,
-                kioskModeEnabled = false,
-                keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
-                onExit = {
-                    navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
-                },
-                onHome = {
-                    navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
-                },
-                onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
-            )
+            if (BuildConfig.USE_GECKO) {
+                WebViewScreen(
+                    kind = WebViewKind.POS,
+                    title = outletTitle,
+                    url = outletUrl,
+                    geckoView = sharedGeckoView!!,
+                    viewModel = outletViewModel,
+                    isOnline = isOnline,
+                    kioskModeEnabled = false,
+                    keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
+                    onExit = {
+                        navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    },
+                    onHome = {
+                        navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    },
+                    onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
+                )
+            } else {
+                SystemWebViewScreen(
+                    kind = WebViewKind.POS,
+                    title = outletTitle,
+                    url = outletUrl,
+                    webView = sharedSystemWebView!!,
+                    viewModel = outletViewModel,
+                    isOnline = isOnline,
+                    kioskModeEnabled = false,
+                    keepScreenOnEnabled = settingsState.keepScreenOnEnabled,
+                    onExit = {
+                        navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    },
+                    onHome = {
+                        navController.popBackStack(NightPOSDestination.Dashboard.route, inclusive = false)
+                    },
+                    onOpenSettings = { navController.navigate(NightPOSDestination.Settings.route) },
+                )
+            }
         }
 
         composable(NightPOSDestination.Settings.route) {
             SettingsScreen(
                 viewModel = settingsViewModel,
-                sharedGeckoView = sharedGeckoView,
+                sharedGeckoView = sharedGeckoView,  // null on d2splus; screen handles nullable
                 onBack = { navController.popBackStack() },
             )
         }

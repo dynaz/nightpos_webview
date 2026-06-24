@@ -19,7 +19,8 @@ import java.util.concurrent.TimeUnit
 class NightPOSApplication : Application() {
 
     companion object {
-        lateinit var geckoRuntime: GeckoRuntime
+        // Null on d2splus flavor (USE_GECKO = false); non-null on arm32/arm64.
+        var geckoRuntime: GeckoRuntime? = null
             private set
         lateinit var printerConnection: SunmiPrinterConnection
             private set
@@ -44,37 +45,39 @@ class NightPOSApplication : Application() {
             Log.i("NightPOS", "PrintHttpServer started on port ${PrintHttpServer.PORT}")
         }.onFailure { Log.e("NightPOS", "PrintHttpServer failed to start: ${it.message}") }
 
-        // Wipe the GeckoView extension startup cache so updated content.js /
-        // pos-configs.js are always loaded fresh from assets rather than a
-        // stale lz4-compressed cache that survives APK upgrades.
-        clearGeckoStartupCache()
+        if (BuildConfig.USE_GECKO) {
+            // Wipe the GeckoView extension startup cache so updated content.js /
+            // pos-configs.js are always loaded fresh from assets rather than a
+            // stale lz4-compressed cache that survives APK upgrades.
+            clearGeckoStartupCache()
 
-        val configFile = writeGeckoConfig()
-        geckoRuntime = GeckoRuntime.create(
-            this,
-            GeckoRuntimeSettings.Builder()
-                .javaScriptEnabled(true)
-                .remoteDebuggingEnabled(false)
-                // Forwarding every JS console message to logcat costs a JNI round trip
-                // per call; Odoo's POS UI logs frequently (barcode scans, sync status).
-                // Keep it for debug builds only.
-                .consoleOutput(BuildConfig.DEBUG)
-                .configFilePath(configFile.absolutePath)
-                .build(),
-        )
-
-        // Install built-in extension that polyfills Promise.withResolvers (Firefox 121)
-        // and structuredClone (Firefox 94) — required by Odoo 19 on GeckoView 99.
-        // Block until the extension is confirmed installed so the content script fires
-        // at document_start on the very first page load (no timing race).
-        val polyfillLatch = CountDownLatch(1)
-        geckoRuntime.webExtensionController
-            .ensureBuiltIn("resource://android/assets/extensions/polyfill/", "polyfill@nightpos")
-            .accept(
-                { Log.i("NightPOS", "Polyfill extension installed"); polyfillLatch.countDown() },
-                { e -> Log.w("NightPOS", "Polyfill extension error: ${e?.message}"); polyfillLatch.countDown() },
+            val configFile = writeGeckoConfig()
+            geckoRuntime = GeckoRuntime.create(
+                this,
+                GeckoRuntimeSettings.Builder()
+                    .javaScriptEnabled(true)
+                    .remoteDebuggingEnabled(false)
+                    // Forwarding every JS console message to logcat costs a JNI round trip
+                    // per call; Odoo's POS UI logs frequently (barcode scans, sync status).
+                    // Keep it for debug builds only.
+                    .consoleOutput(BuildConfig.DEBUG)
+                    .configFilePath(configFile.absolutePath)
+                    .build(),
             )
-        polyfillLatch.await(3, TimeUnit.SECONDS)
+
+            // Install built-in extension that polyfills Promise.withResolvers (Firefox 121)
+            // and structuredClone (Firefox 94) — required by Odoo 19 on GeckoView 99.
+            // Block until the extension is confirmed installed so the content script fires
+            // at document_start on the very first page load (no timing race).
+            val polyfillLatch = CountDownLatch(1)
+            geckoRuntime!!.webExtensionController
+                .ensureBuiltIn("resource://android/assets/extensions/polyfill/", "polyfill@nightpos")
+                .accept(
+                    { Log.i("NightPOS", "Polyfill extension installed"); polyfillLatch.countDown() },
+                    { e -> Log.w("NightPOS", "Polyfill extension error: ${e?.message}"); polyfillLatch.countDown() },
+                )
+            polyfillLatch.await(3, TimeUnit.SECONDS)
+        }
     }
 
     override fun onTrimMemory(level: Int) {
@@ -87,7 +90,7 @@ class NightPOSApplication : Application() {
         // throttled by the OS.
         if (level >= TRIM_MEMORY_RUNNING_LOW) {
             runCatching {
-                geckoRuntime.storageController.clearData(StorageController.ClearFlags.ALL_CACHES)
+                geckoRuntime?.storageController?.clearData(StorageController.ClearFlags.ALL_CACHES)
                 Log.i("NightPOS", "onTrimMemory($level): cleared GeckoView network/image caches")
             }.onFailure { Log.w("NightPOS", "onTrimMemory clearData failed: ${it.message}") }
         }

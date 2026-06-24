@@ -3,6 +3,7 @@ package com.nightpos.app.ui.screens.webview
 import android.app.Activity
 import android.view.ViewGroup
 import android.view.Window
+import android.webkit.WebView
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,22 +43,22 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import com.nightpos.app.NightPOSApplication
 import com.nightpos.app.R
+import com.nightpos.app.print.SunmiJsBridge
 import com.nightpos.app.ui.navigation.WebViewKind
 import com.nightpos.app.ui.screens.offline.OfflineScreen
 import com.nightpos.app.ui.theme.ErrorRed
 import com.nightpos.app.ui.theme.NeonPurple
 import com.nightpos.app.ui.theme.NightBlack
-import com.nightpos.app.webview.GeckoNavigationDelegate
-import com.nightpos.app.webview.GeckoProgressDelegate
-import org.mozilla.geckoview.GeckoView
+import com.nightpos.app.webview.PosWebChromeClient
+import com.nightpos.app.webview.PosWebViewClient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WebViewScreen(
+fun SystemWebViewScreen(
     kind: WebViewKind,
     title: String,
     url: String,
-    geckoView: GeckoView,
+    webView: WebView,
     viewModel: WebViewViewModel,
     isOnline: Boolean,
     kioskModeEnabled: Boolean,
@@ -73,65 +74,50 @@ fun WebViewScreen(
 
     LaunchedEffect(kind, title) { viewModel.initialize(kind, title) }
 
-    KeepScreenOn(enabled = keepScreenOnEnabled)
-    KioskSystemBars(enabled = kioskModeEnabled)
+    SysKeepScreenOn(enabled = keepScreenOnEnabled)
+    SysKioskSystemBars(enabled = kioskModeEnabled)
 
-    val session = geckoView.session
-
-    // Wire up delegates once per screen composition
-    val navigationDelegate = remember(kind) {
-        GeckoNavigationDelegate(
-            context = context,
-            onPageStarted = { viewModel.onPageStarted() },
-            onPageFinished = { viewModel.onPageFinished(false) },
+    DisposableEffect(webView) {
+        webView.webViewClient = PosWebViewClient(
+            onPageStarted = { _ ->
+                viewModel.onPageStarted()
+                webView.evaluateJavascript(SunmiJsBridge.buildInjectionScript(), null)
+            },
+            onPageFinished = { _ ->
+                viewModel.onPageFinished(webView.canGoBack())
+                webView.evaluateJavascript(SunmiJsBridge.buildInjectionScript(), null)
+            },
+            onReceivedError = { code, desc, failingUrl ->
+                viewModel.onPageError(code, desc, failingUrl)
+            },
+            onSslError = { handler, _ -> handler.cancel() },
             onBlockedDomain = { host -> viewModel.onBlockedDomain(host) },
         )
-    }
-
-    val progressDelegate = remember(kind) {
-        GeckoProgressDelegate(
-            onPageStarted = { viewModel.onPageStarted() },
+        webView.webChromeClient = PosWebChromeClient(
             onProgressChanged = { progress -> viewModel.onProgressChanged(progress) },
-            onPageStopped = { viewModel.onPageFinished(false) },
+            onShowFileChooser = { _, _ -> false },
+            onGeolocationPermissionRequest = { origin, callback -> callback.invoke(origin, true, false) },
+            onPermissionRequest = { request -> request.grant(request.resources) },
+            onShowCustomView = { _, _ -> },
+            onHideCustomView = { },
+            onCreateWindow = { _, _, _, _ -> false },
+            onCloseWindow = { },
+            onJsAlert = { _, _, result -> result.confirm(); true },
         )
+        onDispose { }
     }
 
-    DisposableEffect(session, navigationDelegate, progressDelegate) {
-        session?.navigationDelegate = navigationDelegate
-        session?.progressDelegate = progressDelegate
-        session?.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
-        onDispose {
-            session?.navigationDelegate = null
-            session?.progressDelegate = null
-            // Keep the prompt delegate alive so pos-configs.js can still report
-            // outlet names even after leaving the WebView screen (the singleton
-            // bridge never changes, so re-assigning is safe and always correct).
-            session?.promptDelegate = NightPOSApplication.jsBridge.geckoPromptDelegate
-        }
-    }
-
-    // Open the session lazily the first time this screen is shown — avoids spawning
-    // GeckoView content processes until GeckoView is actually needed.
-    LaunchedEffect(session) {
-        val runtime = NightPOSApplication.geckoRuntime ?: return@LaunchedEffect
-        if (session != null && !session.isOpen) {
-            session.open(runtime)
-        }
-    }
-
-    // Load URL when it changes (skip if already on this URL)
     LaunchedEffect(url) {
         val current = uiState.currentUrl
         if (current?.substringBefore('#') != url.substringBefore('#')) {
-            session?.loadUri(url)
+            webView.loadUrl(url)
             viewModel.setCurrentUrl(url)
         }
     }
 
     BackHandler(enabled = true) {
-        // GeckoSession.canGoBack is async; use ViewModel's tracked state
-        if (uiState.canGoBack) {
-            session?.goBack()
+        if (webView.canGoBack()) {
+            webView.goBack()
         } else {
             viewModel.requestExit()
         }
@@ -152,12 +138,12 @@ fun WebViewScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 if (!kioskModeEnabled) {
-                    WebViewTopBar(
+                    SysWebViewTopBar(
                         title = uiState.title,
                         onBack = {
-                            if (uiState.canGoBack) session?.goBack() else viewModel.requestExit()
+                            if (webView.canGoBack()) webView.goBack() else viewModel.requestExit()
                         },
-                        onReload = { session?.reload() },
+                        onReload = { webView.reload() },
                         onHome = onHome,
                         onSettings = onOpenSettings,
                     )
@@ -170,18 +156,18 @@ fun WebViewScreen(
                     .padding(padding),
             ) {
                 when {
-                    !isOnline -> OfflineScreen(onRetry = { session?.reload() })
+                    !isOnline -> OfflineScreen(onRetry = { webView.reload() })
 
                     else -> {
                         PullToRefreshBox(
                             isRefreshing = uiState.isLoading && uiState.loadProgress in 1..40,
-                            onRefresh = { session?.reload() },
+                            onRefresh = { webView.reload() },
                             modifier = Modifier.fillMaxSize(),
                         ) {
                             AndroidView(
                                 factory = {
-                                    (geckoView.parent as? ViewGroup)?.removeView(geckoView)
-                                    geckoView
+                                    (webView.parent as? ViewGroup)?.removeView(webView)
+                                    webView
                                 },
                                 modifier = Modifier.fillMaxSize(),
                             )
@@ -204,7 +190,7 @@ fun WebViewScreen(
     }
 
     if (uiState.showExitConfirmation) {
-        ExitConfirmationDialog(
+        SysExitConfirmationDialog(
             kioskMode = kioskModeEnabled,
             onConfirm = { viewModel.dismissExit(); onExit() },
             onDismiss = { viewModel.dismissExit() },
@@ -214,7 +200,7 @@ fun WebViewScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WebViewTopBar(
+private fun SysWebViewTopBar(
     title: String,
     onBack: () -> Unit,
     onReload: () -> Unit,
@@ -260,7 +246,7 @@ private fun WebViewTopBar(
 }
 
 @Composable
-private fun ExitConfirmationDialog(kioskMode: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun SysExitConfirmationDialog(kioskMode: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (kioskMode) stringResource(R.string.kiosk_exit_title) else stringResource(R.string.webview_exit_pos_title)) },
@@ -282,7 +268,7 @@ private fun ExitConfirmationDialog(kioskMode: Boolean, onConfirm: () -> Unit, on
 }
 
 @Composable
-private fun KeepScreenOn(enabled: Boolean) {
+private fun SysKeepScreenOn(enabled: Boolean) {
     val view = LocalView.current
     DisposableEffect(enabled) {
         val window = (view.context as? Activity)?.window
@@ -292,16 +278,16 @@ private fun KeepScreenOn(enabled: Boolean) {
 }
 
 @Composable
-private fun KioskSystemBars(enabled: Boolean) {
+private fun SysKioskSystemBars(enabled: Boolean) {
     val view = LocalView.current
     DisposableEffect(enabled) {
         val window = (view.context as? Activity)?.window
-        if (window != null) applyImmersiveMode(window, enabled)
-        onDispose { if (window != null) applyImmersiveMode(window, false) }
+        if (window != null) sysApplyImmersiveMode(window, enabled)
+        onDispose { if (window != null) sysApplyImmersiveMode(window, false) }
     }
 }
 
-private fun applyImmersiveMode(window: Window, hide: Boolean) {
+private fun sysApplyImmersiveMode(window: Window, hide: Boolean) {
     val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
     if (hide) {
         controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
