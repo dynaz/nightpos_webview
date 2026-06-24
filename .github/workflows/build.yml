@@ -1,16 +1,22 @@
-name: Build APK
+name: Build NightPOS APK
+
+run-name: ${{ inputs.run_name || format('Build {0} APK', inputs.flavor) }}
 
 on:
   workflow_dispatch:
     inputs:
+      run_name:
+        description: 'Run name (optional, e.g. "fix ABI for D2s Plus")'
+        required: false
+        default: ''
       flavor:
-        description: 'Flavor to build'
+        description: 'Flavor — pick by: adb shell getprop ro.product.cpu.abi'
         required: true
-        default: 'legacy'
+        default: 'arm32'
         type: choice
         options:
-          - legacy
-          - modern
+          - arm32
+          - arm64
           - both
 
 jobs:
@@ -37,26 +43,26 @@ jobs:
           key: gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
-      - name: Build legacy APK
-        if: ${{ inputs.flavor == 'legacy' || inputs.flavor == 'both' }}
-        run: ./gradlew assembleLegacyRelease --no-daemon
+      - name: Build arm32 APK (armeabi-v7a — T1, T2, D2s Plus)
+        if: ${{ inputs.flavor == 'arm32' || inputs.flavor == 'both' }}
+        run: ./gradlew assembleArm32Release --no-daemon
 
-      - name: Build modern APK
-        if: ${{ inputs.flavor == 'modern' || inputs.flavor == 'both' }}
-        run: ./gradlew assembleModernRelease --no-daemon
+      - name: Build arm64 APK (arm64-v8a — D2s original)
+        if: ${{ inputs.flavor == 'arm64' || inputs.flavor == 'both' }}
+        run: ./gradlew assembleArm64Release --no-daemon
 
-      - name: Upload legacy APK
-        if: ${{ inputs.flavor == 'legacy' || inputs.flavor == 'both' }}
+      - name: Upload arm32 APK
+        if: ${{ inputs.flavor == 'arm32' || inputs.flavor == 'both' }}
         uses: actions/upload-artifact@v4
         with:
-          name: nightpos-legacy
-          path: app/build/outputs/apk/legacy/release/*.apk
+          name: nightpos-arm32
+          path: app/build/outputs/apk/arm32/release/*.apk
           retention-days: 30
 
-      - name: Upload modern APK
-        if: ${{ inputs.flavor == 'modern' || inputs.flavor == 'both' }}
+      - name: Upload arm64 APK
+        if: ${{ inputs.flavor == 'arm64' || inputs.flavor == 'both' }}
         uses: actions/upload-artifact@v4
         with:
-          name: nightpos-modern
-          path: app/build/outputs/apk/modern/release/*.apk
+          name: nightpos-arm64
+          path: app/build/outputs/apk/arm64/release/*.apk
           retention-days: 30
