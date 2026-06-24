@@ -10,10 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.nightpos.app"
-        // 21 = Android 5.0 — GeckoView 142 supports API 21+.
-        // Sunmi D2s runs Android 7.1.2 (API 25), well above this floor.
-        // GeckoView 143+ raised minSdk to 26, so 142 is the highest version for D2s.
-        minSdk = 21
+        minSdk = 21          // floor set by legacy flavor; modern overrides to 26
         targetSdk = 35
         versionCode = 15
         versionName = "2.0.10"
@@ -22,7 +19,33 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        buildConfigField("String", "GECKOVIEW_VERSION", "\"142.0\"")
+    }
+
+    // ── Product flavors ────────────────────────────────────────────────────────
+    // One APK per flavor; device differences are handled at runtime inside each.
+    //
+    //   legacy  → Sunmi T1 / T2  (Android 6/7, armeabi-v7a)  — GeckoView 142
+    //   modern  → Sunmi D2s family (Android 11, arm64-v8a)   — system WebView
+    //
+    flavorDimensions += "target"
+
+    productFlavors {
+        create("legacy") {
+            dimension = "target"
+            minSdk = 21                              // Android 5+ (T1 = 23, T2 = 25)
+            ndk { abiFilters += "armeabi-v7a" }      // 32-bit Sunmi hardware
+            buildConfigField("Boolean", "USE_GECKO", "true")
+            buildConfigField("String", "GECKOVIEW_VERSION", "\"142.0\"")
+            versionNameSuffix = "-legacy"
+        }
+        create("modern") {
+            dimension = "target"
+            minSdk = 26                              // Android 8+ (D2s family = API 30)
+            ndk { abiFilters += "arm64-v8a" }        // 64-bit Sunmi hardware
+            buildConfigField("Boolean", "USE_GECKO", "false")
+            buildConfigField("String", "GECKOVIEW_VERSION", "\"\"")
+            versionNameSuffix = "-modern"
+        }
     }
 
     signingConfigs {
@@ -94,13 +117,14 @@ dependencies {
     implementation(libs.androidbrowserhelper)
     implementation(libs.androidx.appcompat)
     implementation(libs.sunmi.printerlibrary)
-    // 32-bit ARM variant — Sunmi D2s is armeabi-v7a, Android 7.1.2 (API 25).
-    // v142 is the highest GeckoView that supports API 21+ (v143+ raised floor to API 26).
+    // GeckoView only in the legacy flavor (T1/T2, armeabi-v7a, Android 6/7).
+    // v142 is the highest GeckoView supporting API 21+; v143+ raised floor to API 26.
     // Firefox 130+ added 'camera' to navigator.permissions.query PermissionName enum,
     // fixing the UncaughtPromiseError seen with GeckoView 105.
-    implementation("org.mozilla.geckoview:geckoview-armeabi-v7a:142.0.20250827004350")
-    // Local HTTP server for printer bridge (avoids SELinux socket-ioctl restriction
-    // that prevents GeckoView IPC from working on kernel 3.10 / Android 6.0.1).
+    "legacyImplementation"("org.mozilla.geckoview:geckoview-armeabi-v7a:142.0.20250827004350")
+    // Local HTTP server — used by both flavors for the Sunmi printer bridge.
+    // legacy: avoids SELinux socket-ioctl restriction on kernel 3.10 / Android 6.
+    // modern: Chrome has a localhost mixed-content exception so fetch() works directly.
     implementation("org.nanohttpd:nanohttpd:2.3.1")
 
     debugImplementation(libs.androidx.ui.tooling)
