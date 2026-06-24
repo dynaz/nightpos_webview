@@ -113,9 +113,8 @@ fun WebViewScreen(
     // Open the session lazily the first time this screen is shown — avoids spawning
     // GeckoView content processes until GeckoView is actually needed.
     LaunchedEffect(session) {
-        val runtime = NightPOSApplication.geckoRuntime ?: return@LaunchedEffect
         if (session != null && !session.isOpen) {
-            session.open(runtime)
+            session.open(NightPOSApplication.geckoRuntime)
         }
     }
 

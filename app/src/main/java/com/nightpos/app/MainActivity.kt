@@ -17,7 +17,6 @@ import com.nightpos.app.ui.screens.settings.SettingsUiState
 import com.nightpos.app.ui.theme.NightPOSTheme
 import com.nightpos.app.util.AutoReopenPosEffect
 import com.nightpos.app.webview.GeckoSessionFactory
-import com.nightpos.app.webview.WebViewConfigurator
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.mozilla.geckoview.GeckoSession
@@ -39,25 +38,15 @@ class MainActivity : ComponentActivity() {
             NightPOSTheme {
                 val context = LocalContext.current
 
-                // GeckoView flavors (arm32, arm64): one shared GeckoView + GeckoSession.
-                // d2splus flavor: GeckoView crashes on Rockchip RK30; use system WebView instead.
-                val sharedGeckoView: GeckoView? = remember {
-                    if (BuildConfig.USE_GECKO) {
-                        GeckoView(context).also { view ->
-                            val session = GeckoSessionFactory.create()
-                            view.setSession(session)
-                            geckoSession = session
-                        }
-                    } else null
-                }
-
-                val sharedSystemWebView: android.webkit.WebView? = remember {
-                    if (!BuildConfig.USE_GECKO) {
-                        android.webkit.WebView(context).also { wv ->
-                            WebViewConfigurator.configure(wv)
-                            wv.addJavascriptInterface(NightPOSApplication.jsBridge, "NightPOSBridge")
-                        }
-                    } else null
+                // One GeckoView + one GeckoSession shared across all screens.
+                // The session is opened lazily inside WebViewScreen so that content
+                // processes are not spawned until GeckoView is actually shown.
+                val sharedGeckoView = remember {
+                    GeckoView(context).also { view ->
+                        val session = GeckoSessionFactory.create()
+                        view.setSession(session)
+                        geckoSession = session
+                    }
                 }
 
                 val navController = rememberNavController()
@@ -94,7 +83,6 @@ class MainActivity : ComponentActivity() {
                 NightPOSNavHost(
                     appContainer = appContainer,
                     sharedGeckoView = sharedGeckoView,
-                    sharedSystemWebView = sharedSystemWebView,
                     isOnline = isOnline,
                     navController = navController,
                 )

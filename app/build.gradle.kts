@@ -22,17 +22,15 @@ android {
     }
 
     // ── Product flavors ────────────────────────────────────────────────────────
-    // Flavor = device model, which implies both CPU arch and WebView engine.
+    // All flavors use GeckoView. Flavor = device, determines CPU ABI and minSdk.
     //
-    //   arm32    → armeabi-v7a + GeckoView  — Sunmi T1, T2 (Android 6/7, old system WebView)
-    //   d2splus  → armeabi-v7a + system WebView — Sunmi D2s Plus (Android 11, Rockchip RK30)
-    //              GeckoView crashes on Rockchip RK30 kernel; Android 11 WebView is modern enough.
-    //   arm64    → arm64-v8a + GeckoView    — Sunmi D2s original (Android 11, Qualcomm Snapdragon)
+    //   arm32   → armeabi-v7a — Sunmi T1, T2 (Android 6/7, Rockchip)
+    //   d2splus → armeabi-v7a — Sunmi D2s Plus (Android 11, Rockchip RK30)
+    //   arm64   → arm64-v8a   — Sunmi D2s original (Android 11, Qualcomm Snapdragon)
     //
-    // Pick by: adb shell getprop ro.product.cpu.abi + adb shell getprop ro.board.platform
-    //   armeabi-v7a + rk30board → d2splus APK
-    //   armeabi-v7a (other)     → arm32   APK
-    //   arm64-v8a               → arm64   APK
+    // Pick by: adb shell getprop ro.product.cpu.abi
+    //   armeabi-v7a → arm32 or d2splus APK
+    //   arm64-v8a   → arm64 APK
     //
     flavorDimensions += "target"
 
@@ -40,7 +38,7 @@ android {
         create("arm32") {
             dimension = "target"
             minSdk = 21                              // Android 5+ (T1 = 23, T2 = 25)
-            ndk { abiFilters += "armeabi-v7a" }      // 32-bit older Sunmi hardware
+            ndk { abiFilters += "armeabi-v7a" }
             buildConfigField("Boolean", "USE_GECKO", "true")
             buildConfigField("String", "GECKOVIEW_VERSION", "\"142.0\"")
             versionNameSuffix = "-arm32"
@@ -49,14 +47,14 @@ android {
             dimension = "target"
             minSdk = 30                              // Android 11 (D2s Plus = API 30)
             ndk { abiFilters += "armeabi-v7a" }      // Rockchip RK30 is 32-bit ARM
-            buildConfigField("Boolean", "USE_GECKO", "false")
-            buildConfigField("String", "GECKOVIEW_VERSION", "\"\"")
+            buildConfigField("Boolean", "USE_GECKO", "true")
+            buildConfigField("String", "GECKOVIEW_VERSION", "\"142.0\"")
             versionNameSuffix = "-d2splus"
         }
         create("arm64") {
             dimension = "target"
             minSdk = 26                              // Android 8+ (D2s original = API 30)
-            ndk { abiFilters += "arm64-v8a" }        // 64-bit Qualcomm Sunmi hardware
+            ndk { abiFilters += "arm64-v8a" }
             buildConfigField("Boolean", "USE_GECKO", "true")
             buildConfigField("String", "GECKOVIEW_VERSION", "\"142.0\"")
             versionNameSuffix = "-arm64"
@@ -141,11 +139,11 @@ dependencies {
     // v142 is the highest GeckoView supporting API 21+; v143+ raised minSdk to 26.
     // Firefox 130+ added 'camera' to navigator.permissions.query PermissionName enum,
     // fixing the UncaughtPromiseError seen with GeckoView 105.
-    // arm32: T1/T2 (armeabi-v7a — older Sunmi with outdated system WebView)
+    // arm32/d2splus: armeabi-v7a GeckoView (T1, T2, D2s Plus)
     "arm32Implementation"("org.mozilla.geckoview:geckoview-armeabi-v7a:142.0.20250827004350")
-    // arm64: D2s original (arm64-v8a — Qualcomm Snapdragon)
+    "d2splusImplementation"("org.mozilla.geckoview:geckoview-armeabi-v7a:142.0.20250827004350")
+    // arm64: arm64-v8a GeckoView (D2s original)
     "arm64Implementation"("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
-    // d2splus: no GeckoView — uses Android 11 system WebView
     // Local HTTP server — used by both flavors for the Sunmi printer bridge.
     implementation("org.nanohttpd:nanohttpd:2.3.1")
 
