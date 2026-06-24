@@ -42,8 +42,8 @@ android {
             dimension = "target"
             minSdk = 26                              // Android 8+ (D2s family = API 30)
             ndk { abiFilters += "arm64-v8a" }        // 64-bit Sunmi hardware
-            buildConfigField("Boolean", "USE_GECKO", "false")
-            buildConfigField("String", "GECKOVIEW_VERSION", "\"\"")
+            buildConfigField("Boolean", "USE_GECKO", "true")
+            buildConfigField("String", "GECKOVIEW_VERSION", "\"142.0\"")
             versionNameSuffix = "-modern"
         }
     }
@@ -117,11 +117,14 @@ dependencies {
     implementation(libs.androidbrowserhelper)
     implementation(libs.androidx.appcompat)
     implementation(libs.sunmi.printerlibrary)
-    // GeckoView only in the legacy flavor (T1/T2, armeabi-v7a, Android 6/7).
-    // v142 is the highest GeckoView supporting API 21+; v143+ raised floor to API 26.
+    // GeckoView per flavor — same version, different ABI to match device hardware.
+    // v142 is the highest GeckoView supporting API 21+; v143+ raised minSdk to 26.
     // Firefox 130+ added 'camera' to navigator.permissions.query PermissionName enum,
     // fixing the UncaughtPromiseError seen with GeckoView 105.
+    // legacy: T1/T2 (armeabi-v7a, Android 6/7)
     "legacyImplementation"("org.mozilla.geckoview:geckoview-armeabi-v7a:142.0.20250827004350")
+    // modern: D2s family (arm64-v8a, Android 11)
+    "modernImplementation"("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
     // Local HTTP server — used by both flavors for the Sunmi printer bridge.
     // legacy: avoids SELinux socket-ioctl restriction on kernel 3.10 / Android 6.
     // modern: Chrome has a localhost mixed-content exception so fetch() works directly.
