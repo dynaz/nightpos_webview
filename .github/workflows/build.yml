@@ -1,17 +1,28 @@
-name: Build APK
+name: Build NightPOS APK
+
+run-name: ${{ inputs.run_name || format('Build {0} APK', inputs.flavor) }}
 
 on:
   workflow_dispatch:
     inputs:
+      run_name:
+        description: 'Run name (optional, e.g. "fix D2s Plus crash")'
+        required: false
+        default: ''
       flavor:
-        description: 'Flavor to build'
+        description: |
+          Device flavor:
+            arm32   → Sunmi T1, T2 (armeabi-v7a, GeckoView)
+            d2splus → Sunmi D2s Plus (armeabi-v7a, system WebView, Rockchip RK30)
+            arm64   → Sunmi D2s original (arm64-v8a, GeckoView)
         required: true
-        default: 'legacy'
+        default: 'd2splus'
         type: choice
         options:
-          - legacy
-          - modern
-          - both
+          - arm32
+          - d2splus
+          - arm64
+          - all
 
 jobs:
   build:
@@ -37,26 +48,38 @@ jobs:
           key: gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
-      - name: Build legacy APK
-        if: ${{ inputs.flavor == 'legacy' || inputs.flavor == 'both' }}
-        run: ./gradlew assembleLegacyRelease --no-daemon
+      - name: Build arm32 APK (T1, T2 — armeabi-v7a + GeckoView)
+        if: ${{ inputs.flavor == 'arm32' || inputs.flavor == 'all' }}
+        run: ./gradlew assembleArm32Release --no-daemon
 
-      - name: Build modern APK
-        if: ${{ inputs.flavor == 'modern' || inputs.flavor == 'both' }}
-        run: ./gradlew assembleModernRelease --no-daemon
+      - name: Build d2splus APK (D2s Plus — armeabi-v7a + system WebView)
+        if: ${{ inputs.flavor == 'd2splus' || inputs.flavor == 'all' }}
+        run: ./gradlew assembleD2splusRelease --no-daemon
 
-      - name: Upload legacy APK
-        if: ${{ inputs.flavor == 'legacy' || inputs.flavor == 'both' }}
+      - name: Build arm64 APK (D2s original — arm64-v8a + GeckoView)
+        if: ${{ inputs.flavor == 'arm64' || inputs.flavor == 'all' }}
+        run: ./gradlew assembleArm64Release --no-daemon
+
+      - name: Upload arm32 APK
+        if: ${{ inputs.flavor == 'arm32' || inputs.flavor == 'all' }}
         uses: actions/upload-artifact@v4
         with:
-          name: nightpos-legacy
-          path: app/build/outputs/apk/legacy/release/*.apk
+          name: nightpos-arm32
+          path: app/build/outputs/apk/arm32/release/*.apk
           retention-days: 30
 
-      - name: Upload modern APK
-        if: ${{ inputs.flavor == 'modern' || inputs.flavor == 'both' }}
+      - name: Upload d2splus APK
+        if: ${{ inputs.flavor == 'd2splus' || inputs.flavor == 'all' }}
         uses: actions/upload-artifact@v4
         with:
-          name: nightpos-modern
-          path: app/build/outputs/apk/modern/release/*.apk
+          name: nightpos-d2splus
+          path: app/build/outputs/apk/d2splus/release/*.apk
+          retention-days: 30
+
+      - name: Upload arm64 APK
+        if: ${{ inputs.flavor == 'arm64' || inputs.flavor == 'all' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightpos-arm64
+          path: app/build/outputs/apk/arm64/release/*.apk
           retention-days: 30

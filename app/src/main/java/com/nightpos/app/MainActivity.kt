@@ -41,8 +41,6 @@ class MainActivity : ComponentActivity() {
                 // One GeckoView + one GeckoSession shared across all screens.
                 // The session is opened lazily inside WebViewScreen so that content
                 // processes are not spawned until GeckoView is actually shown.
-                // (On Sunmi T1 / kernel 3.10, the POS opens in Firefox Custom Tabs
-                // and GeckoView is never used, avoiding the SELinux IPC crash loop.)
                 val sharedGeckoView = remember {
                     GeckoView(context).also { view ->
                         val session = GeckoSessionFactory.create()

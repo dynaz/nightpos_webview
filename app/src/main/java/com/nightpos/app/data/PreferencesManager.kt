@@ -27,6 +27,11 @@ class PreferencesManager(private val context: Context) {
         val PRINTER_PAPER_WIDTH_MM = intPreferencesKey("printer_paper_width_mm")
     }
 
+    // True once the user has explicitly saved a server URL (i.e. completed login).
+    val isSetupComplete: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.SERVER_URL] != null
+    }
+
     val serverUrl: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[Keys.SERVER_URL] ?: Constants.DEFAULT_BASE_URL
     }
@@ -41,6 +46,12 @@ class PreferencesManager(private val context: Context) {
 
     val autoReopenPosEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[Keys.AUTO_REOPEN_POS] ?: false
+    }
+
+    // True once a paper width has been saved (auto-detected or user-set).
+    // Used to avoid overwriting the user's manual choice on reconnect.
+    val isPaperWidthSet: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.PRINTER_PAPER_WIDTH_MM] != null
     }
 
     val printerPaperWidthMm: Flow<Int> = context.dataStore.data.map { prefs ->

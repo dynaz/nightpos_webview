@@ -22,6 +22,8 @@ import com.nightpos.app.ui.screens.dashboard.DashboardScreen
 import com.nightpos.app.ui.screens.dashboard.DashboardViewModel
 import com.nightpos.app.ui.screens.settings.SettingsScreen
 import com.nightpos.app.ui.screens.settings.SettingsViewModel
+import com.nightpos.app.ui.screens.login.LoginScreen
+import com.nightpos.app.ui.screens.login.LoginViewModel
 import com.nightpos.app.ui.screens.splash.SplashScreen
 import com.nightpos.app.ui.screens.webview.WebViewScreen
 import com.nightpos.app.ui.screens.webview.WebViewViewModel
@@ -45,6 +47,9 @@ fun NightPOSNavHost(
         factory = appContainer.settingsViewModelFactory(),
     )
     val settingsState by settingsViewModel.uiState.collectAsState()
+
+    val isSetupComplete by appContainer.preferencesManager.isSetupComplete
+        .collectAsState(initial = false)
 
     // ── Pre-fetch POS outlet configs on startup ───────────────────────────────
     // Open the GeckoSession and load the server base URL as soon as we know it.
@@ -73,8 +78,27 @@ fun NightPOSNavHost(
         composable(NightPOSDestination.Splash.route) {
             SplashScreen(
                 onFinished = {
-                    navController.navigate(NightPOSDestination.Dashboard.route) {
+                    val dest = if (isSetupComplete) {
+                        NightPOSDestination.Dashboard.route
+                    } else {
+                        NightPOSDestination.Login.route
+                    }
+                    navController.navigate(dest) {
                         popUpTo(NightPOSDestination.Splash.route) { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        composable(NightPOSDestination.Login.route) {
+            val loginViewModel: LoginViewModel = viewModel(
+                factory = appContainer.loginViewModelFactory(),
+            )
+            LoginScreen(
+                viewModel = loginViewModel,
+                onConnected = {
+                    navController.navigate(NightPOSDestination.Dashboard.route) {
+                        popUpTo(NightPOSDestination.Login.route) { inclusive = true }
                     }
                 },
             )
