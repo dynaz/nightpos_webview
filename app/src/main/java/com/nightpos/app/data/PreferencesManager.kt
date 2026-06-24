@@ -27,6 +27,11 @@ class PreferencesManager(private val context: Context) {
         val PRINTER_PAPER_WIDTH_MM = intPreferencesKey("printer_paper_width_mm")
     }
 
+    // True once the user has explicitly saved a server URL (i.e. completed login).
+    val isSetupComplete: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.SERVER_URL] != null
+    }
+
     val serverUrl: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[Keys.SERVER_URL] ?: Constants.DEFAULT_BASE_URL
     }

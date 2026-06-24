@@ -9,6 +9,7 @@ import android.net.Uri
 sealed class NightPOSDestination(val route: String) {
 
     data object Splash : NightPOSDestination("splash")
+    data object Login : NightPOSDestination("login")
     data object Dashboard : NightPOSDestination("dashboard")
     data object Settings : NightPOSDestination("settings")
 
