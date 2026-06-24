@@ -3,6 +3,7 @@ package com.nightpos.app.webview
 import android.annotation.SuppressLint
 import android.content.Context
 import android.view.View
+import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.nightpos.app.print.SunmiJsBridge
@@ -15,17 +16,12 @@ import com.nightpos.app.print.SunmiJsBridge
  * Chrome allows fetch("http://localhost:8585") from HTTPS as a mixed-content
  * exception for localhost — no special prefs needed.
  */
+@SuppressLint("SetJavaScriptEnabled")
 object WebViewFactory {
 
-    @SuppressLint("SetJavaScriptEnabled")
     fun create(context: Context, onPageStarted: (String) -> Unit): View {
         val webView = WebView(context)
-
-        webView.settings.apply {
-            javaScriptEnabled = true
-            domStorageEnabled = true
-            databaseEnabled = true
-        }
+        WebViewConfigurator.configure(webView, CookieManager.getInstance())
 
         val jsBridge = SunmiJsBridge(context)
         jsBridge.bindPrinter()
@@ -34,7 +30,7 @@ object WebViewFactory {
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 onPageStarted(url)
-                // Inject device identity and bridge shim synchronously before page JS runs
+                // Inject device identity and bridge shim before page JS runs
                 view.evaluateJavascript(SunmiJsBridge.buildInjectionScript(), null)
             }
         }
