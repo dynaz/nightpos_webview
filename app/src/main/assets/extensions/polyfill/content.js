@@ -1,3 +1,24 @@
+// ── NightPOS device injection ─────────────────────────────────────────────────
+// Runs synchronously at document_start so window.__nightpos_device is available
+// before any page JS. Uses window.prompt which GeckoView intercepts natively
+// without opening a dialog (the geckoPromptDelegate handles nightpos: prefixed calls).
+(function () {
+    if (navigator.userAgent.indexOf("NightPOS") === -1) return;
+    var paperWidth = "58";
+    try {
+        var resp = window.prompt("nightpos:SunmiPrinter", '{"method":"getPaperWidth"}');
+        if (resp) {
+            var info = JSON.parse(resp);
+            if (info.paperWidth === "80" || info.paperWidth === 80) {
+                paperWidth = "80";
+            }
+        }
+    } catch (e) {
+        // Older builds don't support getPaperWidth — default to 58mm.
+    }
+    window.__nightpos_device = { type: "sunmi", manufacturer: "SUNMI", paperWidth: paperWidth };
+})();
+
 // Polyfills for Odoo 19 on GeckoView 99 (Firefox 99).
 
 // Promise.withResolvers — added in Firefox 121, used by Odoo 19 OWL framework.

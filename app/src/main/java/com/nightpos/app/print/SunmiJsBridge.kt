@@ -3,13 +3,16 @@ package com.nightpos.app.print
 import android.content.Context
 import android.util.Base64
 import android.webkit.JavascriptInterface
+import com.nightpos.app.data.PreferencesManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Dual-mode JS bridge for the Sunmi printer:
@@ -117,6 +120,12 @@ class SunmiJsBridge(private val context: Context) {
             "openDrawer" -> {
                 Thread { openCashDrawer() }.start()
                 JSONObject().put("success", true).toString()
+            }
+            "getPaperWidth" -> {
+                val widthMm = runBlocking {
+                    PreferencesManager(context).printerPaperWidthMm.first()
+                }
+                JSONObject().put("success", true).put("paperWidth", widthMm.toString()).toString()
             }
             else -> JSONObject().put("success", false).put("error", "Unknown method: $method").toString()
         }

@@ -40,7 +40,7 @@ class NightPOSApplication : Application() {
         jsBridge = SunmiJsBridge(this).also { it.bindPrinter() }
 
         runCatching {
-            PrintHttpServer(printerConnection).start()
+            PrintHttpServer(printerConnection, this).start()
             Log.i("NightPOS", "PrintHttpServer started on port ${PrintHttpServer.PORT}")
         }.onFailure { Log.e("NightPOS", "PrintHttpServer failed to start: ${it.message}") }
 

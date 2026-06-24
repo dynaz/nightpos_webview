@@ -1,7 +1,11 @@
 package com.nightpos.app.print
 
+import android.content.Context
 import android.util.Base64
+import com.nightpos.app.data.PreferencesManager
 import fi.iki.elonen.NanoHTTPD
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 /**
@@ -16,7 +20,10 @@ import org.json.JSONObject
  * can call http://localhost:[PORT] — modern browsers allow HTTPS → http://localhost
  * as a "secure context" exception.
  */
-class PrintHttpServer(private val connection: SunmiPrinterConnection) : NanoHTTPD(PORT) {
+class PrintHttpServer(
+    private val connection: SunmiPrinterConnection,
+    private val context: Context,
+) : NanoHTTPD(PORT) {
 
     @Volatile private var bound = false
 
@@ -26,8 +33,12 @@ class PrintHttpServer(private val connection: SunmiPrinterConnection) : NanoHTTP
         }
         return cors(
             when {
-                session.uri == "/ping" ->
-                    json("""{"status":"ok","printer":"sunmi"}""")
+                session.uri == "/ping" -> {
+                    val widthMm = runBlocking {
+                        PreferencesManager(context).printerPaperWidthMm.first()
+                    }
+                    json("""{"status":"ok","printer":"sunmi","paperWidth":"$widthMm"}""")
+                }
                 session.uri == "/print" && session.method == Method.POST ->
                     handlePrint(session)
                 else ->
@@ -62,6 +73,12 @@ class PrintHttpServer(private val connection: SunmiPrinterConnection) : NanoHTTP
             "openDrawer" -> {
                 Thread { openDrawer() }.start()
                 JSONObject().put("success", true).toString()
+            }
+            "getPaperWidth" -> {
+                val widthMm = runBlocking {
+                    PreferencesManager(context).printerPaperWidthMm.first()
+                }
+                JSONObject().put("success", true).put("paperWidth", widthMm.toString()).toString()
             }
             else -> JSONObject().put("success", false).put("error", "Unknown method: $method").toString()
         }
